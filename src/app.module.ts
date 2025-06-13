@@ -15,7 +15,6 @@ import { CloudinaryModule } from './common/services/cloudinary/cloudinary.module
 import { MailModule } from './common/services/mail/mail.module';
 import { WishlistsModule } from './cart/wishlists/wishlists.module';
 import { NotificationsModule } from './notification/notifications/notifications.module';
-import { LogsModule } from './log/logs/logs.module';
 import { CartsModule } from './cart/carts/carts.module';
 import { CartItemsModule } from './cart/cart-items/cart-items.module';
 import { ProductsModule } from 'src/product/products/products.module';
@@ -68,7 +67,6 @@ import { AddressesModule } from 'src/user/addresses/addresses.module';
     AuthModule,
     AddressesModule,
     NotificationsModule,
-    LogsModule,
     CartsModule,
     CartItemsModule,
     WishlistsModule,
