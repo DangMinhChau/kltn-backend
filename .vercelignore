@@ -9,8 +9,6 @@ yarn-error.log*
 coverage
 .nyc_output
 .cache
-dist
-build
 *.tsbuildinfo
 .env.development
 .env.test
@@ -22,3 +20,5 @@ docs/
 routes/
 *.md
 !README.md
+dist/
+src/
