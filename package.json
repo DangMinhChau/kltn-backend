@@ -8,6 +8,7 @@
   "scripts": {
     "prebuild": "if exist dist rmdir /s /q dist",
     "build": "nest build",
+    "build:vercel": "nest build",
     "postbuild": "if exist public xcopy public dist\\public /e /i /y",
     "build:prod": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -15,6 +16,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "vercel-build": "npm run build",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",

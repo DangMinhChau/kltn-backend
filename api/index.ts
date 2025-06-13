@@ -1,16 +1,18 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
-import { TypeormExceptionFilter } from 'src/common/filters/typeorm-exception.filter';
+import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
+import { TypeormExceptionFilter } from '../src/common/filters/typeorm-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { LoggingInterceptor } from 'src/common/interceptors';
+import { LoggingInterceptor } from '../src/common/interceptors';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
-async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+let app: NestExpressApplication;
+
+async function createNestServer() {
+  app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Serve static files from public directory
   app.useStaticAssets(join(__dirname, '..', 'public'), {
@@ -20,7 +22,7 @@ async function bootstrap() {
   // Serve index.html for root path
   app.useStaticAssets(join(__dirname, '..', 'public'));
 
-  // Security headers configuration
+  // Security headers configuration for production
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -36,7 +38,7 @@ async function bootstrap() {
           scriptSrc: ["'self'"],
           connectSrc: [
             "'self'",
-            process.env.FRONTEND_URL || 'http://localhost:3000',
+            process.env.FRONTEND_URL || 'https://your-frontend-url.vercel.app',
           ],
           frameSrc: ["'none'"],
           objectSrc: ["'none'"],
@@ -44,7 +46,7 @@ async function bootstrap() {
           formAction: ["'self'"],
         },
       },
-      crossOriginEmbedderPolicy: false, // Disable for development
+      crossOriginEmbedderPolicy: false,
       hsts: {
         maxAge: 31536000, // 1 year
         includeSubDomains: true,
@@ -70,11 +72,11 @@ async function bootstrap() {
     }),
   );
 
-  // Enhanced CORS configuration
+  // Enhanced CORS configuration for production
   app.enableCors({
     origin: [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-      'http://localhost:3000',
+      process.env.FRONTEND_URL || 'https://your-frontend-url.vercel.app',
+      'http://localhost:3000', // for development
       'https://localhost:3000',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -82,6 +84,7 @@ async function bootstrap() {
     credentials: true,
     maxAge: 86400, // 24 hours
   });
+
   // Global interceptors and filters
   app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter(), new TypeormExceptionFilter());
@@ -93,8 +96,8 @@ async function bootstrap() {
     .setVersion('1.0')
     .setContact('Development Team', '', 'contact@yourcompany.com')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
-    .addServer('http://localhost:3001', 'Development Server')
-    .addServer('https://api.yourcompany.com', 'Production Server')
+    .addServer('https://your-api.vercel.app', 'Production Server')
+    .addServer('http://localhost:8000', 'Development Server')
     .addBearerAuth(
       {
         type: 'http',
@@ -120,29 +123,16 @@ async function bootstrap() {
     },
     customSiteTitle: 'E-Commerce API Documentation',
     customfavIcon: '/favicon.ico',
-    customJs: [
-      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.min.js',
-    ],
-    customCssUrl: [
-      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css',
-    ],
   });
-  const port = process.env.PORT ?? 8000;
 
-  // Only listen on port in development
-  if (process.env.NODE_ENV !== 'production') {
-    await app.listen(port);
-    console.log(`🚀 Application is running on: http://localhost:${port}`);
-    console.log(
-      `📚 API Documentation available at: http://localhost:${port}/api/docs`,
-    );
-  }
-
+  await app.init();
   return app;
 }
 
-bootstrap().catch((error) => {
-  console.error('❌ Error starting the application:', error);
-  process.exit(1);
-});
+export default async function handler(req: any, res: any) {
+  if (!app) {
+    await createNestServer();
+  }
+
+  return app.getHttpAdapter().getInstance()(req, res);
+}
