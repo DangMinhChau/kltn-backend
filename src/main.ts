@@ -6,9 +6,19 @@ import { TypeormExceptionFilter } from 'src/common/filters/typeorm-exception.fil
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { LoggingInterceptor } from 'src/common/interceptors';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Serve static files from public directory
+  app.useStaticAssets(join(__dirname, '..', 'public'), {
+    prefix: '/public/',
+  });
+
+  // Serve index.html for root path
+  app.useStaticAssets(join(__dirname, '..', 'public'));
 
   // Security headers configuration
   app.use(
