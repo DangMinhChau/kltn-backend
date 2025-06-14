@@ -8,9 +8,22 @@ import helmet from 'helmet';
 import { LoggingInterceptor } from 'src/common/interceptors';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Set Node.js memory options if not already set
+  if (!process.env.NODE_OPTIONS) {
+    process.env.NODE_OPTIONS = '--max-old-space-size=4096';
+  }
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: ['error', 'warn', 'log'],
+    // Reduce memory usage during bootstrap
+    bodyParser: false,
+  });
+  // Configure body parser with limits
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Serve static files from public directory
   app.useStaticAssets(join(__dirname, '..', 'public'), {
@@ -131,11 +144,19 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
 
+  // Memory cleanup
+  if (global.gc) {
+    global.gc();
+  }
+
   // Only listen on port in development
   if (process.env.NODE_ENV !== 'production') {
     console.log(`🚀 Application is running on: http://localhost:${port}`);
     console.log(
       `📚 API Documentation available at: http://localhost:${port}/api/docs`,
+    );
+    console.log(
+      `💾 Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)} MB`,
     );
   }
   return app;
