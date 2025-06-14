@@ -52,10 +52,6 @@ import { AddressesModule } from 'src/user/addresses/addresses.module';
       autoLoadEntities: true,
       synchronize: process.env.NODE_ENV !== 'production', // Set to false in production
       logging: process.env.NODE_ENV === 'development',
-      ssl:
-        process.env.NODE_ENV === 'production'
-          ? { rejectUnauthorized: false }
-          : false,
     }), // Organized modules following NestJS best practices    // Product-related modules
     ProductsModule,
     SizesModule,
