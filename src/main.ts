@@ -128,17 +128,16 @@ async function bootstrap() {
       'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css',
     ],
   });
-  const port = process.env.PORT ?? 8000;
+  const port = process.env.PORT ?? 3001;
+  await app.listen(port);
 
   // Only listen on port in development
   if (process.env.NODE_ENV !== 'production') {
-    await app.listen(port);
     console.log(`🚀 Application is running on: http://localhost:${port}`);
     console.log(
       `📚 API Documentation available at: http://localhost:${port}/api/docs`,
     );
   }
-
   return app;
 }
 
