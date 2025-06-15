@@ -69,13 +69,13 @@ async function bootstrap() {
       stopAtFirstError: true,
     }),
   );
-
   // Enhanced CORS configuration
   app.enableCors({
     origin: [
       process.env.FRONTEND_URL || 'http://localhost:3000',
       'http://localhost:3000',
       'https://localhost:3000',
+      'https://kltn-client-production.up.railway.app', // Add the deployed client domain
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

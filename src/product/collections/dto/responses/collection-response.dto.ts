@@ -38,13 +38,13 @@ export class CollectionResponseDto {
   })
   @Expose()
   year: number;
-
   @ApiProperty({
     description: 'Collection description',
     example: 'A vibrant collection inspired by summer beaches and sunshine',
+    required: false,
   })
   @Expose()
-  description: string;
+  description?: string;
 
   @ApiProperty({
     description: 'Collection images',
