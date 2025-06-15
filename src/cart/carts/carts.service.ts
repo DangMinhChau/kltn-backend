@@ -112,7 +112,8 @@ export class CartsService {
     }
 
     return cart;
-  }  async findByUserId(userId: string): Promise<Cart> {
+  }
+  async findByUserId(userId: string): Promise<Cart> {
     let cart = await this.cartRepository
       .createQueryBuilder('cart')
       .leftJoinAndSelect('cart.user', 'user')
@@ -273,11 +274,18 @@ export class CartsService {
         { name: 'Overnight', cost: baseCost * 3, days: 1 },
       ],
     };
-  }  private toCartResponseDto(cart: Cart): CartResponseDto {
-    console.log('toCartResponseDto - Cart data:', JSON.stringify(cart, null, 2));
+  }
+  private toCartResponseDto(cart: Cart): CartResponseDto {
+    console.log(
+      'toCartResponseDto - Cart data:',
+      JSON.stringify(cart, null, 2),
+    );
     console.log('toCartResponseDto - Cart items:', cart.items);
-    console.log('toCartResponseDto - First item variant:', cart.items?.[0]?.variant);
-    
+    console.log(
+      'toCartResponseDto - First item variant:',
+      cart.items?.[0]?.variant,
+    );
+
     const cartData = {
       ...cart,
       itemCount: cart.items?.length || 0,
@@ -294,7 +302,7 @@ export class CartsService {
     const result = plainToInstance(CartResponseDto, cartData, {
       excludeExtraneousValues: true,
     });
-    
+
     console.log('toCartResponseDto - Result:', JSON.stringify(result, null, 2));
     return result;
   }
