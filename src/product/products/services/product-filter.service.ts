@@ -132,11 +132,11 @@ export class ProductFilterService {
     if (filters.tag && filters.tag.length > 0) {
       const tagSlugs = this.normalizeToArray(filters.tag);
       queryBuilder.andWhere('tags.slug IN (:...tagSlugs)', { tagSlugs });
-    } // Price range filter - tính giá thực tế từ basePrice và discount
+    } // Price range filter - tính giá thực tế từ basePrice và discountPercent
     if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
       if (filters.priceMin !== undefined) {
         queryBuilder.andWhere(
-          'product.basePrice * (1 - IFNULL(product.discount, 0)) >= :priceMin',
+          'product.basePrice * (1 - IFNULL(product.discountPercent, 0) / 100) >= :priceMin',
           {
             priceMin: filters.priceMin,
           },
@@ -144,7 +144,7 @@ export class ProductFilterService {
       }
       if (filters.priceMax !== undefined) {
         queryBuilder.andWhere(
-          'product.basePrice * (1 - IFNULL(product.discount, 0)) <= :priceMax',
+          'product.basePrice * (1 - IFNULL(product.discountPercent, 0) / 100) <= :priceMax',
           {
             priceMax: filters.priceMax,
           },
@@ -191,13 +191,13 @@ export class ProductFilterService {
       switch (legacySortBy) {
         case SortBy.PRICE_ASC:
           queryBuilder.orderBy(
-            'product.basePrice * (1 - COALESCE(product.discount, 0))',
+            'product.basePrice * (1 - COALESCE(product.discountPercent, 0) / 100)',
             'ASC',
           );
           break;
         case SortBy.PRICE_DESC:
           queryBuilder.orderBy(
-            'product.basePrice * (1 - COALESCE(product.discount, 0))',
+            'product.basePrice * (1 - COALESCE(product.discountPercent, 0) / 100)',
             'DESC',
           );
           break;
@@ -435,15 +435,15 @@ export class ProductFilterService {
       };
     });
   } /**
-   * Get price range data (optimized for MySQL) - tính từ basePrice và discount của Product
+   * Get price range data (optimized for MySQL) - tính từ basePrice và discountPercent của Product
    */
   async getPriceRangeData(): Promise<PriceRangeResponse> {
     const result = await this.productRepository
       .createQueryBuilder('product')
       .where('product.isActive = :productActive', { productActive: true })
       .select([
-        'MIN(product.basePrice * (1 - IFNULL(product.discount, 0))) as minPrice',
-        'MAX(product.basePrice * (1 - IFNULL(product.discount, 0))) as maxPrice',
+        'MIN(product.basePrice * (1 - IFNULL(product.discountPercent, 0) / 100)) as minPrice',
+        'MAX(product.basePrice * (1 - IFNULL(product.discountPercent, 0) / 100)) as maxPrice',
       ])
       .getRawOne();
 
@@ -760,8 +760,8 @@ export class ProductFilterService {
       )
       .where('product.isActive = :productActive', { productActive: true })
       .select([
-        'MIN(product.basePrice * (1 - IFNULL(product.discount, 0))) as minPrice',
-        'MAX(product.basePrice * (1 - IFNULL(product.discount, 0))) as maxPrice',
+        'MIN(product.basePrice * (1 - IFNULL(product.discountPercent, 0) / 100)) as minPrice',
+        'MAX(product.basePrice * (1 - IFNULL(product.discountPercent, 0) / 100)) as maxPrice',
       ])
       .getRawOne();
 

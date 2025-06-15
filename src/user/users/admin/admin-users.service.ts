@@ -95,7 +95,8 @@ export class AdminUsersService {
 
       // Apply pagination
       const offset = (page - 1) * limit;
-      queryBuilder.skip(offset).take(limit);      this.logger.log('Executing database query...');
+      queryBuilder.skip(offset).take(limit);
+      this.logger.log('Executing database query...');
       const [users, total] = await queryBuilder.getManyAndCount();
       this.logger.log(`Found ${users.length} users out of ${total} total`);
 

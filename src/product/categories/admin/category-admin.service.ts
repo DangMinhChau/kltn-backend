@@ -200,7 +200,7 @@ export class CategoryAdminService {
         name: product.name,
         slug: product.slug,
         basePrice: product.basePrice,
-        discount: product.discount,
+        discountPercent: product.discountPercent,
         actualPrice: product.calculateActualPrice(),
         isActive: product.isActive,
         stockQuantity:

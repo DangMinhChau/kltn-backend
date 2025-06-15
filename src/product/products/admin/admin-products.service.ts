@@ -196,8 +196,7 @@ export class AdminProductsService {
 
   /**
    * Tạo sản phẩm mới với image upload - Admin only
-   */
-  async create(createProductDto: CreateProductDto): Promise<Product> {
+   */ async create(createProductDto: CreateProductDto): Promise<Product> {
     const {
       categoryId,
       materialIds = [],
@@ -265,9 +264,7 @@ export class AdminProductsService {
     const img = await this.imageService.create(
       createProductDto.image,
       productData.name,
-    );
-
-    // Create product with uploaded image data
+    ); // Create product with uploaded image data
     const product = this.productRepository.create({
       ...productData,
       image: img,
@@ -285,8 +282,7 @@ export class AdminProductsService {
 
   /**
    * Cập nhật sản phẩm - Admin only
-   */
-  async update(
+   */ async update(
     id: string,
     updateProductDto: UpdateProductDto,
     image?: Express.Multer.File,

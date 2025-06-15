@@ -30,8 +30,8 @@ export class Product extends BaseEntity {
   @Column({ name: 'price', type: 'decimal', precision: 18, scale: 3 })
   basePrice: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 4, nullable: true })
-  discount: number; // 0.2 = 20% discount
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  discountPercent: number; // 20 = 20% discount
 
   @ManyToOne(() => Category, (category) => category.products, {
     nullable: false,
@@ -98,7 +98,7 @@ export class Product extends BaseEntity {
     });
   }
   calculateActualPrice(): number {
-    const discountValue = this.discount || 0;
-    return this.basePrice * (1 - discountValue);
+    const discountValue = this.discountPercent || 0;
+    return this.basePrice * (1 - discountValue / 100);
   }
 }

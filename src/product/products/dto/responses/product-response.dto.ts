@@ -33,10 +33,9 @@ export class ProductResponseDto {
   @ApiProperty({ description: 'Product base price' })
   @Expose()
   basePrice: number;
-
   @ApiProperty({ description: 'Product discount (percentage)' })
   @Expose()
-  discount?: number;
+  discountPercent?: number;
 
   @ApiProperty({ description: 'Is active' })
   @Expose()

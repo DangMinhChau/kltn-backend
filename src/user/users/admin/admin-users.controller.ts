@@ -234,15 +234,4 @@ export class AdminUsersController {
       },
     };
   }
-  @Get('health')
-  @ApiOperation({
-    summary: 'Health check for admin users API',
-    description: 'Simple endpoint to test if the admin users API is working',
-  })
-  healthCheck(): { status: string; timestamp: string } {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-    };
-  }
 }
