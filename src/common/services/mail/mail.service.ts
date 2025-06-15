@@ -136,7 +136,7 @@ export class MailService {
     verificationToken: string,
   ): Promise<void> {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${frontendUrl}/auth/verify-email?token=${verificationToken}`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
