@@ -23,6 +23,7 @@ import {
   CreateCartDto,
   UpdateCartDto,
   MergeGuestCartDto,
+  ShippingEstimateRequestDto,
   CartResponseDto,
   CartSummaryResponseDto,
   CartRecommendationsResponseDto,
@@ -66,8 +67,17 @@ export class CartsController {
       ],
     },
   })
-  create(@Body() createCartDto: CreateCartDto) {
-    return this.cartsService.create(createCartDto);
+  async create(
+    @Body() createCartDto: CreateCartDto,
+  ): Promise<BaseResponseDto<CartResponseDto>> {
+    const cart = await this.cartsService.create(createCartDto);
+    return {
+      message: 'Cart created successfully',
+      data: cart,
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
   @Get()
   @UseGuards(RolesGuard)
@@ -88,10 +98,9 @@ export class CartsController {
       ],
     },
   })
-  findAll() {
-    return this.cartsService.findAll();
+  async findAll(): Promise<PaginatedResponseDto<CartResponseDto>> {
+    return await this.cartsService.findAll();
   }
-
   @Get('my-cart')
   @ApiOperation({ summary: 'Get current user cart' })
   @ApiOkResponse({
@@ -106,8 +115,10 @@ export class CartsController {
       ],
     },
   })
-  getMyCart(@GetUserId() userId: string) {
-    return this.cartsService.getMyCart(userId);
+  async getMyCart(
+    @GetUserId() userId: string,
+  ): Promise<BaseResponseDto<CartResponseDto>> {
+    return await this.cartsService.getMyCart(userId);
   }
   @Get('summary')
   @ApiOperation({ summary: 'Get cart summary for current user' })
@@ -123,8 +134,10 @@ export class CartsController {
       ],
     },
   })
-  getCartSummary(@GetUserId() userId: string) {
-    return this.cartsService.getCartSummary(userId);
+  async getCartSummary(
+    @GetUserId() userId: string,
+  ): Promise<BaseResponseDto<CartSummaryResponseDto>> {
+    return await this.cartsService.getCartSummary(userId);
   }
   @Get('recommendations')
   @ApiOperation({ summary: 'Get cart recommendations for current user' })
@@ -159,10 +172,11 @@ export class CartsController {
       ],
     },
   })
-  findOne(@Param('id') id: string) {
-    return this.cartsService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+  ): Promise<BaseResponseDto<CartResponseDto>> {
+    return await this.cartsService.findOne(id);
   }
-
   @Patch(':id')
   @ApiOperation({ summary: 'Update cart' })
   @ApiOkResponse({
@@ -177,8 +191,17 @@ export class CartsController {
       ],
     },
   })
-  update(@Param('id') id: string, @Body() updateCartDto: UpdateCartDto) {
-    return this.cartsService.update(id, updateCartDto);
+  async update(
+    @Param('id') id: string, 
+    @Body() updateCartDto: UpdateCartDto
+  ): Promise<BaseResponseDto<CartResponseDto>> {
+    const cart = await this.cartsService.update(id, updateCartDto);    return {
+      message: 'Cart updated successfully',
+      data: this.cartsService.convertToCartResponseDto(cart),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 
   @Post('merge-guest-cart')
@@ -195,11 +218,17 @@ export class CartsController {
       ],
     },
   })
-  mergeGuestCart(
+  async mergeGuestCart(
     @GetUserId() userId: string,
     @Body() mergeGuestCartDto: MergeGuestCartDto,
-  ) {
-    return this.cartsService.mergeGuestCart(userId, mergeGuestCartDto.items);
+  ): Promise<BaseResponseDto<CartResponseDto>> {
+    const cart = await this.cartsService.mergeGuestCart(userId, mergeGuestCartDto.items);    return {
+      message: 'Guest cart merged successfully',
+      data: this.cartsService.convertToCartResponseDto(cart),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
   @Post('shipping-estimate')
   @ApiOperation({ summary: 'Get shipping estimate for cart' })
@@ -215,10 +244,15 @@ export class CartsController {
       ],
     },
   })
-  getShippingEstimate(@GetUserId() userId: string, @Body() addressData: any) {
-    return this.cartsService.getShippingEstimate(userId, addressData);
+  async getShippingEstimate(
+    @GetUserId() userId: string,
+    @Body() shippingEstimateDto: ShippingEstimateRequestDto,
+  ): Promise<BaseResponseDto<ShippingEstimateResponseDto>> {
+    return await this.cartsService.getShippingEstimate(
+      userId,
+      shippingEstimateDto,
+    );
   }
-
   @Delete(':id/clear')
   @ApiOperation({ summary: 'Clear cart by ID' })
   @ApiOkResponse({
@@ -227,14 +261,21 @@ export class CartsController {
         { $ref: getSchemaPath(BaseResponseDto) },
         {
           properties: {
-            data: { type: 'null' },
+            data: { $ref: getSchemaPath(CartResponseDto) },
           },
         },
       ],
     },
   })
-  clearCart(@Param('id') id: string) {
-    return this.cartsService.clearCart(id);
+  async clearCart(@Param('id') id: string): Promise<BaseResponseDto<CartResponseDto>> {
+    const cart = await this.cartsService.clearCart(id);
+    return {
+      message: 'Cart cleared successfully',
+      data: this.cartsService.convertToCartResponseDto(cart),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 
   @Delete('my-cart/clear')
@@ -245,16 +286,22 @@ export class CartsController {
         { $ref: getSchemaPath(BaseResponseDto) },
         {
           properties: {
-            data: { type: 'null' },
+            data: { $ref: getSchemaPath(CartResponseDto) },
           },
         },
       ],
     },
   })
-  clearMyCart(@GetUserId() userId: string) {
-    return this.cartsService.clearMyCart(userId);
-  }
-  @Delete(':id')
+  async clearMyCart(@GetUserId() userId: string): Promise<BaseResponseDto<CartResponseDto>> {
+    const cart = await this.cartsService.clearCartByUserId(userId);
+    return {
+      message: 'Your cart cleared successfully',
+      data: this.cartsService.convertToCartResponseDto(cart),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }  @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete cart (Admin only)' })
@@ -270,7 +317,14 @@ export class CartsController {
       ],
     },
   })
-  remove(@Param('id') id: string) {
-    return this.cartsService.remove(id);
+  async remove(@Param('id') id: string): Promise<BaseResponseDto<null>> {
+    await this.cartsService.remove(id);
+    return {
+      message: 'Cart deleted successfully',
+      data: null,
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 }

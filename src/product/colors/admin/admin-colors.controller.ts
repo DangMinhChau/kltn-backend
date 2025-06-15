@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Patch,
   Delete,
   Body,
@@ -91,7 +90,12 @@ export class AdminColorsController {
   async findAll(
     @Query() queryDto: ColorQueryDto,
   ): Promise<PaginatedResponseDto<ColorResponseDto>> {
+    console.log('AdminColorsController.findAll called with query:', queryDto);
+
     const result = await this.adminColorsService.findAll(queryDto);
+
+    console.log('Service result:', result);
+
     return {
       message: 'Colors retrieved successfully',
       data: result.colors.map((color) =>
@@ -179,12 +183,11 @@ export class AdminColorsController {
       },
     };
   }
-
   /**
    * Cập nhật màu - Admin only
-   * PUT /admin/colors/:id
+   * PATCH /admin/colors/:id
    */
-  @Put(':id')
+  @Patch(':id')
   @ApiOperation({
     summary: 'Update color',
     description: 'Update an existing color. Admin access required.',
@@ -210,42 +213,6 @@ export class AdminColorsController {
 
     return {
       message: 'Color updated successfully',
-      data: plainToInstance(ColorResponseDto, color),
-      meta: {
-        timestamp: new Date().toISOString(),
-      },
-    };
-  }
-
-  /**
-   * Bật/tắt trạng thái isActive - Admin only
-   * PATCH /admin/colors/:id/toggle
-   */
-  @Patch(':id/toggle')
-  @ApiOperation({
-    summary: 'Toggle color active status',
-    description: 'Toggle the active status of a color. Admin access required.',
-  })
-  @ApiParam({ name: 'id', description: 'Color ID (UUID)' })
-  @ApiOkResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(BaseResponseDto) },
-        {
-          properties: {
-            data: { $ref: getSchemaPath(ColorResponseDto) },
-          },
-        },
-      ],
-    },
-  })
-  async toggleActive(
-    @Param('id') id: string,
-  ): Promise<BaseResponseDto<ColorResponseDto>> {
-    const color = await this.adminColorsService.toggleActive(id);
-
-    return {
-      message: `Color ${color.isActive ? 'activated' : 'deactivated'} successfully`,
       data: plainToInstance(ColorResponseDto, color),
       meta: {
         timestamp: new Date().toISOString(),

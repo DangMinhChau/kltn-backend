@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
+import { CartItemResponseDto } from 'src/cart/cart-items/dto/responses/cart-item-response.dto';
+import { UserResponseDto } from 'src/user/users/dto';
 
 export class CartResponseDto {
   @ApiProperty({
@@ -10,25 +12,34 @@ export class CartResponseDto {
   id: string;
 
   @ApiProperty({
-    description: 'User ID who owns the cart',
-    example: '550e8400-e29b-41d4-a716-446655440001',
+    description: 'User who owns the cart',
+    type: UserResponseDto,
   })
   @Expose()
-  userId: string;
+  @Type(() => UserResponseDto)
+  user: UserResponseDto;
+
+  @ApiProperty({
+    description: 'Cart items',
+    type: [CartItemResponseDto],
+  })
+  @Expose()
+  @Type(() => CartItemResponseDto)
+  items: CartItemResponseDto[];
 
   @ApiProperty({
     description: 'Total number of items in cart',
     example: 3,
   })
   @Expose()
-  totalItems: number;
+  itemCount: number;
 
   @ApiProperty({
     description: 'Total price of all items in cart',
     example: 899000,
   })
   @Expose()
-  totalPrice: number;
+  subtotal: number;
 
   @ApiProperty({
     description: 'Cart creation timestamp',

@@ -19,10 +19,12 @@ import { CartsModule } from './cart/carts/carts.module';
 import { CartItemsModule } from './cart/cart-items/cart-items.module';
 import { ProductsModule } from 'src/product/products/products.module';
 import { SizesModule } from 'src/product/sizes/sizes.module';
+import { ColorsModule } from 'src/product/colors/colors.module';
 import { ReviewsModule } from 'src/review/reviews/reviews.module';
 import { UsersModule } from 'src/user/users/users.module';
 import { VouchersModule } from 'src/promotion/vouchers/vouchers.module';
 import { AuthModule } from 'src/user/auth/auth.module';
+import { VariantsModule } from 'src/product/variants/variants.module';
 import { AddressesModule } from 'src/user/addresses/addresses.module';
 
 @Module({
@@ -53,6 +55,8 @@ import { AddressesModule } from 'src/user/addresses/addresses.module';
     }), // Organized modules following NestJS best practices    // Product-related modules
     ProductsModule,
     SizesModule,
+    ColorsModule,
+    VariantsModule,
     // User-related modules
     UsersModule,
     //Order-related modules

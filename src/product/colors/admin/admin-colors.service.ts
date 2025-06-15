@@ -13,14 +13,15 @@ export class AdminColorsService {
 
   /**
    * Get all colors with filters (Admin)
-   */
-  async findAll(queryDto: ColorQueryDto = {}): Promise<{
+   */ async findAll(queryDto: ColorQueryDto = {}): Promise<{
     colors: Color[];
     page: number;
     limit: number;
     total: number;
     totalPages: number;
   }> {
+    console.log('AdminColorsService.findAll called with:', queryDto);
+
     const {
       page = 1,
       limit = 20,
@@ -28,8 +29,18 @@ export class AdminColorsService {
       isActive,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-    } = queryDto;    const queryBuilder = this.colorRepository.createQueryBuilder('color');
-    
+    } = queryDto;
+
+    console.log('Query parameters:', {
+      page,
+      limit,
+      search,
+      isActive,
+      sortBy,
+      sortOrder,
+    });
+    const queryBuilder = this.colorRepository.createQueryBuilder('color');
+
     // Apply search filter
     if (search) {
       queryBuilder.where(
@@ -40,11 +51,8 @@ export class AdminColorsService {
 
     // Apply active filter
     if (isActive !== undefined) {
-      if (search) {
-        queryBuilder.andWhere('color.isActive = :isActive', { isActive });
-      } else {
-        queryBuilder.where('color.isActive = :isActive', { isActive });
-      }
+      const method = search ? 'andWhere' : 'where';
+      queryBuilder[method]('color.isActive = :isActive', { isActive });
     }
 
     // Apply sorting
@@ -53,8 +61,10 @@ export class AdminColorsService {
     // Apply pagination
     const skip = (page - 1) * limit;
     queryBuilder.skip(skip).take(limit);
-
     const [colors, total] = await queryBuilder.getManyAndCount();
+    console.log('Query result:', { colorsCount: colors.length, total });
+    console.log('Colors found:', colors);
+
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -104,15 +114,6 @@ export class AdminColorsService {
       ...(updateColorDto.code && { code: updateColorDto.code.toUpperCase() }),
     });
 
-    return this.colorRepository.save(color);
-  }
-
-  /**
-   * Toggle active status (Admin)
-   */
-  async toggleActive(id: string): Promise<Color> {
-    const color = await this.findOne(id);
-    color.isActive = !color.isActive;
     return this.colorRepository.save(color);
   }
 

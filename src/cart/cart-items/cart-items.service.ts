@@ -280,6 +280,7 @@ export class CartItemsService {
           error instanceof Error ? error.message : 'Unknown error';
         console.error(
           `Failed to add variant ${item.variantId} to cart:`,
+
           errorMessage,
         );
       }
@@ -287,6 +288,84 @@ export class CartItemsService {
 
     return results;
   }
+
+  /**
+   * Merge guest cart items with user's existing cart
+   */
+  async mergeGuestCartItems(
+    userId: string,
+    guestCartItems: { variantId: string; quantity: number }[],
+  ): Promise<{
+    success: boolean;
+    merged: number;
+    failed: number;
+    details: {
+      variantId: string;
+      action: 'merged' | 'added' | 'failed';
+      error?: string;
+    }[];
+  }> {
+    const details: {
+      variantId: string;
+      action: 'merged' | 'added' | 'failed';
+      error?: string;
+    }[] = [];
+
+    let merged = 0;
+    let failed = 0;
+
+    // Get user's current cart items
+    const existingCartItems = await this.findByUserId(userId);
+
+    for (const guestItem of guestCartItems) {
+      try {
+        // Check if item already exists in user's cart
+        const existingItem = existingCartItems.find(
+          (item) => item.variant.id === guestItem.variantId,
+        );
+
+        if (existingItem) {
+          // Merge quantities
+          const newQuantity = existingItem.quantity + guestItem.quantity;
+          await this.update(existingItem.id, { quantity: newQuantity });
+          details.push({
+            variantId: guestItem.variantId,
+            action: 'merged',
+          });
+          merged++;
+        } else {
+          // Add new item to cart
+          await this.addToCart(userId, guestItem.variantId, guestItem.quantity);
+          details.push({
+            variantId: guestItem.variantId,
+            action: 'added',
+          });
+          merged++;
+        }
+      } catch (error) {
+        failed++;
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+        details.push({
+          variantId: guestItem.variantId,
+          action: 'failed',
+          error: errorMessage,
+        });
+        console.error(
+          `Failed to merge guest cart item ${guestItem.variantId}:`,
+          error,
+        );
+      }
+    }
+
+    return {
+      success: failed === 0,
+      merged,
+      failed,
+      details,
+    };
+  }
+
   async validateCartItems(userId: string): Promise<{
     valid: boolean;
     issues: {

@@ -1,36 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-
-export class CartItemProductVariantDto {
-  @ApiProperty({
-    description: 'Product variant ID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
-  @Expose()
-  id: string;
-
-  @ApiProperty({
-    description: 'Product variant SKU',
-    example: 'SHIRT-RED-M',
-  })
-  @Expose()
-  sku: string;
-
-  @ApiProperty({
-    description: 'Product variant price',
-    example: 299000,
-  })
-  @Expose()
-  price: number;
-
-  @ApiProperty({
-    description: 'Product variant discount price',
-    example: 249000,
-    required: false,
-  })
-  @Expose()
-  discountPrice?: number;
-}
+import { VariantResponseDto } from 'src/product/variants/dto';
 
 export class CartItemResponseDto {
   @ApiProperty({
@@ -41,6 +11,26 @@ export class CartItemResponseDto {
   id: string;
 
   @ApiProperty({
+    description: 'Cart information',
+    type: 'object',
+    properties: {
+      id: { type: 'string', description: 'Cart ID' },
+    },
+  })
+  @Expose()
+  cart: {
+    id: string;
+  };
+
+  @ApiProperty({
+    description: 'Product variant information',
+    type: VariantResponseDto,
+  })
+  @Expose()
+  @Type(() => VariantResponseDto)
+  variant: VariantResponseDto;
+
+  @ApiProperty({
     description: 'Quantity of the item',
     example: 2,
   })
@@ -48,12 +38,11 @@ export class CartItemResponseDto {
   quantity: number;
 
   @ApiProperty({
-    description: 'Product variant information',
-    type: CartItemProductVariantDto,
+    description: 'Total price for this item (quantity * variant price)',
+    example: 598000,
   })
   @Expose()
-  @Type(() => CartItemProductVariantDto)
-  productVariant: CartItemProductVariantDto;
+  itemTotal: number;
 
   @ApiProperty({
     description: 'Cart item creation date',

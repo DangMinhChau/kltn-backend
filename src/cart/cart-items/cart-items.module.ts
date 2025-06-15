@@ -7,6 +7,7 @@ import { Cart } from 'src/cart/carts/entities/cart.entity';
 import { ProductVariant } from 'src/product/variants/entities/variant.entity';
 import { User } from 'src/user/users/entities/user.entity';
 import { ProductsModule } from 'src/product/products/products.module';
+
 @Module({
   imports: [
     ProductsModule,

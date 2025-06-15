@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { VariantsService } from './variants.service';
 import { AdminVariantsController } from './admin-variants.controller';
+import { VariantsController } from './variants.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductVariant } from './entities/variant.entity';
 import { Product } from '../products/entities/product.entity';
@@ -21,7 +22,7 @@ import { ImagesModule } from 'src/media/images/images.module';
     ImagesModule,
     CloudinaryModule,
   ],
-  controllers: [AdminVariantsController],
+  controllers: [AdminVariantsController, VariantsController],
   providers: [VariantsService],
   exports: [TypeOrmModule, VariantsService],
 })
