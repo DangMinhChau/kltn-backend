@@ -15,7 +15,10 @@ import {
   UpdateCartItemDto,
   AddToCartDto,
 } from './dto/requests';
-import { CartItemResponseDto } from './dto/responses';
+import {
+  CartItemResponseDto,
+  CartValidationResponseDto,
+} from './dto/responses';
 import { BaseResponseDto } from 'src/common/dto/base-response.dto';
 import { ProductsService } from 'src/product/products/products.service';
 
@@ -149,9 +152,8 @@ export class CartItemsService {
       quantity,
     });
   }
-
-  async findAll(): Promise<CartItem[]> {
-    return await this.cartItemRepository.find({
+  async findAll(): Promise<BaseResponseDto<CartItemResponseDto[]>> {
+    const cartItems = await this.cartItemRepository.find({
       relations: [
         'cart',
         'variant',
@@ -160,6 +162,14 @@ export class CartItemsService {
         'variant.size',
       ],
     });
+
+    return {
+      message: 'Cart items retrieved successfully',
+      data: cartItems.map((item) => this.toCartItemResponseDto(item)),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 
   async findOne(id: string): Promise<CartItem> {
@@ -193,8 +203,31 @@ export class CartItemsService {
       ],
     });
   }
+  async findByUserId(
+    userId: string,
+  ): Promise<BaseResponseDto<CartItemResponseDto[]>> {
+    const cartItems = await this.cartItemRepository.find({
+      where: { cart: { user: { id: userId } } },
+      relations: [
+        'variant',
+        'variant.product',
+        'variant.color',
+        'variant.size',
+        'variant.images',
+      ],
+    });
 
-  async findByUserId(userId: string): Promise<CartItem[]> {
+    return {
+      message: 'User cart items retrieved successfully',
+      data: cartItems.map((item) => this.toCartItemResponseDto(item)),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
+
+  // Internal method for getting cart items entity
+  async findByUserIdEntity(userId: string): Promise<CartItem[]> {
     return await this.cartItemRepository.find({
       where: { cart: { user: { id: userId } } },
       relations: [
@@ -295,11 +328,10 @@ export class CartItemsService {
       cart: { user: { id: userId } },
     });
   }
-
   async bulkAddToCart(
     userId: string,
     items: { variantId: string; quantity: number }[],
-  ): Promise<CartItem[]> {
+  ): Promise<BaseResponseDto<CartItemResponseDto[]>> {
     const results: CartItem[] = [];
     for (const item of items) {
       try {
@@ -315,13 +347,18 @@ export class CartItemsService {
           error instanceof Error ? error.message : 'Unknown error';
         console.error(
           `Failed to add variant ${item.variantId} to cart:`,
-
           errorMessage,
         );
       }
     }
 
-    return results;
+    return {
+      message: `Bulk add to cart completed. ${results.length} items added successfully.`,
+      data: results.map((item) => this.toCartItemResponseDto(item)),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 
   /**
@@ -347,10 +384,8 @@ export class CartItemsService {
     }[] = [];
 
     let merged = 0;
-    let failed = 0;
-
-    // Get user's current cart items
-    const existingCartItems = await this.findByUserId(userId);
+    let failed = 0; // Get user's current cart items
+    const existingCartItems = await this.findByUserIdEntity(userId);
 
     for (const guestItem of guestCartItems) {
       try {
@@ -400,29 +435,28 @@ export class CartItemsService {
       details,
     };
   }
-
-  async validateCartItems(userId: string): Promise<{
-    valid: boolean;
-    issues: {
-      itemId: string;
-      issue: string;
-      variant?: any;
-    }[];
-    summary: {
-      totalValidItems: number;
-      totalInvalidItems: number;
-    };
-  }> {
+  async validateCartItems(
+    userId: string,
+  ): Promise<BaseResponseDto<CartValidationResponseDto>> {
     const cart = await this.cartRepository.findOne({
       where: { user: { id: userId } },
       relations: ['items', 'items.variant', 'items.variant.product'],
     });
-
     if (!cart) {
       return {
-        valid: true,
-        issues: [],
-        summary: { totalValidItems: 0, totalInvalidItems: 0 },
+        message: 'Cart validation completed',
+        data: plainToInstance(
+          CartValidationResponseDto,
+          {
+            valid: true,
+            issues: [],
+            summary: { totalValidItems: 0, totalInvalidItems: 0 },
+          },
+          { excludeExtraneousValues: true },
+        ),
+        meta: {
+          timestamp: new Date().toISOString(),
+        },
       };
     }
 
@@ -469,13 +503,22 @@ export class CartItemsService {
         });
       }
     }
-
     return {
-      valid: issues.length === 0,
-      issues,
-      summary: {
-        totalValidItems: validItems,
-        totalInvalidItems: issues.length,
+      message: 'Cart validation completed',
+      data: plainToInstance(
+        CartValidationResponseDto,
+        {
+          valid: issues.length === 0,
+          issues,
+          summary: {
+            totalValidItems: validItems,
+            totalInvalidItems: issues.length,
+          },
+        },
+        { excludeExtraneousValues: true },
+      ),
+      meta: {
+        timestamp: new Date().toISOString(),
       },
     };
   }

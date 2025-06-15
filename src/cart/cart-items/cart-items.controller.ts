@@ -122,7 +122,7 @@ export class CartItemsController {
   bulkAddToCart(
     @GetUserId() userId: string,
     @Body() body: { items: { variantId: string; quantity: number }[] },
-  ): Promise<CartItem[]> {
+  ): Promise<BaseResponseDto<CartItemResponseDto[]>> {
     return this.cartItemsService.bulkAddToCart(userId, body.items);
   }
   @Post('validate-cart')
@@ -142,7 +142,9 @@ export class CartItemsController {
       ],
     },
   })
-  validateCart(@GetUserId() userId: string) {
+  validateCart(
+    @GetUserId() userId: string,
+  ): Promise<BaseResponseDto<CartValidationResponseDto>> {
     return this.cartItemsService.validateCartItems(userId);
   }
   @Get()
@@ -167,7 +169,7 @@ export class CartItemsController {
       ],
     },
   })
-  findAll(): Promise<CartItem[]> {
+  findAll(): Promise<BaseResponseDto<CartItemResponseDto[]>> {
     return this.cartItemsService.findAll();
   }
   @Get('my-cart-items')
@@ -190,7 +192,9 @@ export class CartItemsController {
       ],
     },
   })
-  getMyCartItems(@GetUserId() userId: string): Promise<CartItem[]> {
+  getMyCartItems(
+    @GetUserId() userId: string,
+  ): Promise<BaseResponseDto<CartItemResponseDto[]>> {
     return this.cartItemsService.findByUserId(userId);
   }
   @Get('cart/:cartId')
