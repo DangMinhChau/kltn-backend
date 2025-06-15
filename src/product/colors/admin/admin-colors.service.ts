@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Color } from '../entities/color.entity';
 import { CreateColorDto } from '../dto/create-color.dto';
 import { UpdateColorDto, ColorQueryDto } from 'src/product/colors/dto';
@@ -28,15 +28,11 @@ export class AdminColorsService {
       isActive,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-    } = queryDto;
-
-    const queryBuilder = this.colorRepository
-      .createQueryBuilder('color')
-      .where('color.deletedAt IS NULL');
-
+    } = queryDto;    const queryBuilder = this.colorRepository.createQueryBuilder('color');
+    
     // Apply search filter
     if (search) {
-      queryBuilder.andWhere(
+      queryBuilder.where(
         '(LOWER(color.name) LIKE :search OR LOWER(color.code) LIKE :search)',
         { search: `%${search.toLowerCase()}%` },
       );
@@ -44,7 +40,11 @@ export class AdminColorsService {
 
     // Apply active filter
     if (isActive !== undefined) {
-      queryBuilder.andWhere('color.isActive = :isActive', { isActive });
+      if (search) {
+        queryBuilder.andWhere('color.isActive = :isActive', { isActive });
+      } else {
+        queryBuilder.where('color.isActive = :isActive', { isActive });
+      }
     }
 
     // Apply sorting
@@ -65,13 +65,12 @@ export class AdminColorsService {
       totalPages,
     };
   }
-
   /**
    * Get color by ID (Admin)
    */
   async findOne(id: string): Promise<Color> {
     const color = await this.colorRepository.findOne({
-      where: { id, deletedAt: IsNull() },
+      where: { id },
     });
 
     if (!color) {
