@@ -17,30 +17,22 @@ export class VoucherResponseDto {
   code: string;
 
   @ApiProperty({
-    description: 'Voucher name',
-    example: 'Khuyến mãi mùa hè',
-  })
-  @Expose()
-  name: string;
-
-  @ApiProperty({
     description: 'Voucher description',
     example: 'Giảm giá 20% cho bộ sưu tập mùa hè',
-    required: false,
   })
   @Expose()
-  description?: string;
+  description: string;
 
   @ApiProperty({
     description: 'Discount type',
-    enum: ['PERCENTAGE', 'FIXED_AMOUNT'],
-    example: 'PERCENTAGE',
+    enum: ['amount', 'percent'],
+    example: 'percent',
   })
   @Expose()
   discountType: string;
 
   @ApiProperty({
-    description: 'Discount value',
+    description: 'Discount value (amount or percentage)',
     example: 20,
   })
   @Expose()

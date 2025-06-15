@@ -36,7 +36,6 @@ import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 @Controller('vouchers')
 export class VouchersController {
   constructor(private readonly vouchersService: VouchersService) {}
-
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -54,10 +53,18 @@ export class VouchersController {
       ],
     },
   })
-  async create(@Body() createVoucherDto: CreateVoucherDto) {
-    return this.vouchersService.create(createVoucherDto);
+  async create(
+    @Body() createVoucherDto: CreateVoucherDto,
+  ): Promise<BaseResponseDto<VoucherResponseDto>> {
+    const voucher = await this.vouchersService.create(createVoucherDto);
+    return {
+      message: 'Voucher created successfully',
+      data: this.vouchersService.toVoucherResponseDto(voucher),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
-
   @Get()
   @ApiOperation({ summary: 'Get all vouchers with pagination' })
   @ApiOkResponse({
@@ -76,7 +83,7 @@ export class VouchersController {
     },
   })
   async findAll(@Query() query: VoucherQueryDto) {
-    return this.vouchersService.findAll(query);
+    return this.vouchersService.findAllWithDto(query);
   }
 
   @Get('active')

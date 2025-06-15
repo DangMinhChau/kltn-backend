@@ -127,7 +127,6 @@ export class CartsService {
       .getOne();
 
     if (!cart) {
-      // Auto create cart if not exists
       cart = await this.createCartEntity({ userId });
     }
 

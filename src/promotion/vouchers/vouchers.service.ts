@@ -7,10 +7,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { plainToInstance } from 'class-transformer';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { UpdateVoucherDto } from './dto/update-voucher.dto';
+import { VoucherResponseDto } from './dto/responses';
 import { Voucher } from './entities/voucher.entity';
 import { DiscountType } from 'src/common/constants/discount-type.enum';
+import { BaseResponseDto } from 'src/common/dto/base-response.dto';
+import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 
 export interface VoucherQueryDto {
   page?: number;
@@ -359,5 +363,68 @@ export class VouchersService {
         createdAt: 'DESC',
       },
     });
+  }
+
+  // DTO transformation methods
+  toVoucherResponseDto(voucher: Voucher): VoucherResponseDto {
+    return plainToInstance(
+      VoucherResponseDto,
+      {
+        ...voucher,
+        discountType: voucher.discountType,
+        discountValue:
+          voucher.discountType === DiscountType.AMOUNT
+            ? voucher.discountAmount
+            : voucher.discountPercent,
+        minOrderValue: voucher.minOrderAmount,
+        usedCount: voucher.usageCount,
+        startDate: voucher.startAt,
+        endDate: voucher.expireAt,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
+  }
+
+  // Update service methods to return DTOs wrapped in BaseResponseDto
+  async findAllWithDto(
+    query: VoucherQueryDto = {},
+  ): Promise<PaginatedResponseDto<VoucherResponseDto>> {
+    const result = await this.findAll(query);
+    return {
+      message: 'Vouchers retrieved successfully',
+      data: result.data.map((voucher) => this.toVoucherResponseDto(voucher)),
+      meta: {
+        ...result.meta,
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
+
+  async findOneWithDto(
+    id: string,
+  ): Promise<BaseResponseDto<VoucherResponseDto>> {
+    const voucher = await this.findOne(id);
+    return {
+      message: 'Voucher retrieved successfully',
+      data: this.toVoucherResponseDto(voucher),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
+
+  async getActiveVouchersWithDto(): Promise<
+    BaseResponseDto<VoucherResponseDto[]>
+  > {
+    const vouchers = await this.getActiveVouchers();
+    return {
+      message: 'Active vouchers retrieved successfully',
+      data: vouchers.map((voucher) => this.toVoucherResponseDto(voucher)),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 }
