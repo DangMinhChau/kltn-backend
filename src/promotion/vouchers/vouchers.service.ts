@@ -95,6 +95,7 @@ export class VouchersService {
       total: number;
       page: number;
       limit: number;
+      totalPages: number;
     };
   }> {
     const { page = 1, limit = 10, search, isActive, discountType } = query;
@@ -123,13 +124,13 @@ export class VouchersService {
       .take(limit)
       .orderBy('voucher.createdAt', 'DESC')
       .getManyAndCount();
-
     return {
       data: vouchers,
       meta: {
         total,
         page,
         limit,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }
