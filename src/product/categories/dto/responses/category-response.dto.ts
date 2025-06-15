@@ -1,5 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
+import { IsOptional } from 'class-validator';
+
+export class CategoryMinimalDto {
+  @Expose()
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  slug: string;
+}
 
 export class CategoryResponseDto {
   @Expose()
@@ -35,26 +47,22 @@ export class CategoryResponseDto {
   })
   isActive: boolean;
 
-  @Expose()
-  @ApiPropertyOptional({
-    description: 'Parent category ID if this is a subcategory',
-    example: '550e8400-e29b-41d4-a716-446655440001',
-  })
-  parentId?: string;
-
-  @Expose()
   @ApiPropertyOptional({
     description: 'Parent category information',
-    type: () => CategoryResponseDto,
   })
-  @Type(() => CategoryResponseDto)
-  parent?: CategoryResponseDto;
+  @Expose()
+  @IsOptional()
+  @Type(() => CategoryMinimalDto)
+  parent?: CategoryMinimalDto;
 
   @ApiPropertyOptional({
     description: 'Child categories',
-    type: [CategoryResponseDto],
+    type: [CategoryMinimalDto],
   })
-  children?: CategoryResponseDto[];
+  @Expose()
+  @IsOptional()
+  @Type(() => CategoryMinimalDto)
+  children?: CategoryMinimalDto[];
 
   @ApiProperty({
     description: 'Category creation timestamp',

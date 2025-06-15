@@ -25,6 +25,7 @@ export class ProductResponseDto {
   @ApiProperty({ description: 'Product description' })
   @Expose()
   description?: string;
+
   @ApiProperty({ description: 'Product SKU' })
   @Expose()
   baseSku: string;
@@ -104,6 +105,7 @@ export class ProductResponseDto {
   @ApiProperty({ description: 'Created at' })
   @Expose()
   createdAt: string;
+
   @ApiProperty({ description: 'Updated at' })
   @Expose()
   updatedAt: string;

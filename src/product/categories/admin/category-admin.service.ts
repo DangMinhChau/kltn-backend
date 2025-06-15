@@ -95,8 +95,7 @@ export class CategoryAdminService {
 
   /**
    * Create new category - Admin only
-   */
-  async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
+   */ async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     const category = this.categoryRepository.create(createCategoryDto);
 
     if (createCategoryDto.parentId) {
@@ -104,7 +103,10 @@ export class CategoryAdminService {
       category.parent = parent;
     }
 
-    return this.categoryRepository.save(category);
+    const savedCategory = await this.categoryRepository.save(category);
+
+    // Return with relations loaded
+    return this.findById(savedCategory.id);
   }
 
   /**
@@ -135,9 +137,11 @@ export class CategoryAdminService {
       const parent = await this.findById(updateCategoryDto.parentId);
       category.parent = parent;
     }
-
     this.categoryRepository.merge(category, updateCategoryDto);
-    return this.categoryRepository.save(category);
+    await this.categoryRepository.save(category);
+
+    // Return with relations loaded
+    return this.findById(category.id);
   }
 
   /**
