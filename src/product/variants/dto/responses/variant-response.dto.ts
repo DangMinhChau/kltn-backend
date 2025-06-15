@@ -38,6 +38,9 @@ export class VariantResponseDto {
       id: '550e8400-e29b-41d4-a716-446655440001',
       name: 'Basic T-Shirt',
       basePrice: 100000,
+      discountPercent: 0,
+      slug: 'basic-t-shirt',
+      images: [],
     },
   })
   @Expose()
@@ -45,11 +48,17 @@ export class VariantResponseDto {
     id: obj.product?.id,
     name: obj.product?.name,
     basePrice: obj.product?.basePrice,
+    discountPercent: obj.product?.discountPercent || 0,
+    slug: obj.product?.slug,
+    images: obj.product?.images || [],
   }))
   product: {
     id: string;
     name: string;
     basePrice?: number;
+    discountPercent?: number;
+    slug?: string;
+    images?: any[];
   };
 
   @ApiProperty({

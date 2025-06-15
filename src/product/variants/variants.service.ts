@@ -115,11 +115,10 @@ export class VariantsService {
       order: { sku: 'ASC' },
     });
   }
-
   async findOne(id: string): Promise<ProductVariant> {
     const variant = await this.variantRepository.findOne({
       where: { id, deletedAt: IsNull() },
-      // relations: ['product', 'color', 'size', 'images'],
+      relations: ['product', 'color', 'size', 'images'],
     });
     if (!variant) {
       throw new NotFoundException(`Variant with id ${id} not found`);
