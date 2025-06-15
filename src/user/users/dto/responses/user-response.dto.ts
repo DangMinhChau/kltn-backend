@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { UserRole } from 'src/common/constants/user-role.enum';
+import { ReviewResponse } from './../../../../review/reviews/interfaces/review.interface';
+import { IsArray } from 'class-validator';
 
 export class UserResponseDto {
   @ApiProperty({
@@ -59,6 +61,15 @@ export class UserResponseDto {
   })
   @Expose()
   createdAt: Date;
+
+  // @ApiProperty({
+  //   description: 'List of user reviews',
+  //   type: [ReviewResponseDto],
+  // })
+  // @Expose()
+  // @Type(() => ReviewResponseDto)
+  // @IsArray()
+  // reviews: ReviewResponseDto[];
 
   @ApiProperty({
     description: 'User last update date',

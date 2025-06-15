@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
-import { IsOptional } from 'class-validator';
-import { CategoryMinimalDto } from 'src/product/categories/dto';
+import { Expose, Transform } from 'class-transformer';
+import { Size } from '../../entities/size.entity';
 
 export class SizeResponseDto {
   @ApiProperty({
@@ -24,7 +23,6 @@ export class SizeResponseDto {
     required: false,
   })
   @Expose()
-  @IsOptional()
   description?: string;
 
   @ApiProperty({
@@ -33,14 +31,6 @@ export class SizeResponseDto {
   })
   @Expose()
   isActive: boolean;
-
-  @ApiProperty({
-    description: 'Category information',
-    type: () => CategoryMinimalDto,
-  })
-  @Type(() => CategoryMinimalDto)
-  @Expose()
-  category: CategoryMinimalDto;
 
   @ApiProperty({
     description: 'Creation timestamp',

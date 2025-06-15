@@ -7,6 +7,7 @@ import { ShippingService } from './shipping.service';
 import { ShippingController } from './shipping.controller';
 import { GHNService } from './services/ghn.service';
 import { CacheService } from './services/cache.service';
+import { GHNWebhookController } from './controllers/ghn-webhook.controller';
 import { GHNAddressController } from './controllers/ghn-address.controller';
 import { Shipping } from './entities/shipping.entity';
 
@@ -22,7 +23,7 @@ import { Shipping } from './entities/shipping.entity';
       },
     ]),
   ],
-  controllers: [ShippingController, GHNAddressController],
+  controllers: [ShippingController, GHNWebhookController, GHNAddressController],
   providers: [ShippingService, GHNService, CacheService],
   exports: [ShippingService, GHNService, CacheService],
 })

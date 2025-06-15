@@ -103,7 +103,8 @@ export class AdminSizesService {
 
   /**
    * Create new size (Admin)
-   */ async create(createSizeDto: CreateSizeDto): Promise<Size> {
+   */
+  async create(createSizeDto: CreateSizeDto): Promise<Size> {
     const { categoryId, ...sizeData } = createSizeDto;
 
     // Verify category exists
@@ -120,10 +121,7 @@ export class AdminSizesService {
       category,
     });
 
-    const savedSize = await this.sizeRepository.save(size);
-
-    // Return with category relation loaded
-    return this.findOne(savedSize.id);
+    return this.sizeRepository.save(size);
   }
 
   /**
@@ -144,13 +142,12 @@ export class AdminSizesService {
       }
 
       size.category = category;
-    } // Update other fields
+    }
+
+    // Update other fields
     Object.assign(size, updateData);
 
-    await this.sizeRepository.save(size);
-
-    // Return with category relation loaded
-    return this.findOne(size.id);
+    return this.sizeRepository.save(size);
   }
 
   /**

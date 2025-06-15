@@ -4,7 +4,7 @@ import { IsOptional } from 'class-validator';
 
 export class CategoryMinimalDto {
   @Expose()
-  id: string;
+  id: number;
 
   @Expose()
   name: string;

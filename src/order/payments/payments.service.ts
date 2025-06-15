@@ -20,6 +20,7 @@ import {
   VNPayCreatePaymentResponse,
   VNPayCallbackDto,
 } from './dto/payment-gateway.dto';
+import { VNPayWebhookDto } from './dto/vnpay-webhook.dto';
 import { Order } from '../orders/entities/order.entity';
 import * as crypto from 'crypto';
 
@@ -567,12 +568,107 @@ export class PaymentsService {
         status: 'paid',
         trackingNumber: order.shipping?.trackingNumber,
       });
+
       this.logger.log(
         `Payment success notifications sent for order ${order.id}`,
       );
     } catch (error) {
       this.logger.error('Failed to send payment notifications:', error);
-      // Don't throw error to prevent payment processing failure
+      // Don't throw error to prevent webhook processing failure
     }
+  }
+
+  /**
+   * Handle VNPay webhook/IPN (Instant Payment Notification)
+   * This is different from callback as it's server-to-server communication
+   * @param webhookData VNPay webhook data
+   * @returns Updated payment entity
+   */
+  async handleVNPayWebhook(webhookData: VNPayWebhookDto): Promise<Payment> {
+    this.logger.log('Processing VNPay webhook/IPN');
+    this.logger.debug(JSON.stringify(webhookData));
+
+    const orderId = webhookData.vnp_TxnRef;
+    const transactionId = webhookData.vnp_TransactionNo; // Find payment by order ID and transaction reference
+    let payment = await this.paymentRepository.findOne({
+      where: { order: { id: orderId } },
+      relations: ['order', 'order.user', 'order.shipping'],
+    });
+
+    if (!payment) {
+      // If payment not found by order ID, try to find by transaction ID
+      payment = await this.paymentRepository.findOne({
+        where: { transactionId: webhookData.vnp_TxnRef },
+        relations: ['order', 'order.user', 'order.shipping'],
+      });
+    }
+
+    if (!payment) {
+      this.logger.error(
+        `Payment not found for order ID: ${orderId} or transaction: ${transactionId}`,
+      );
+      throw new NotFoundException('Payment not found');
+    }
+
+    // Check if this webhook has already been processed (idempotency)
+    if (
+      payment.status === PaymentStatus.PAID &&
+      webhookData.vnp_ResponseCode === '00'
+    ) {
+      this.logger.log(
+        `Webhook already processed for payment ${payment.id}, skipping`,
+      );
+      return payment;
+    }
+
+    const isPaid = webhookData.vnp_ResponseCode === '00';
+    const newStatus = isPaid ? PaymentStatus.PAID : PaymentStatus.FAILED;
+
+    this.logger.log(
+      `Updating payment ${payment.id} for order ${orderId} to status: ${newStatus} via webhook`,
+    ); // Update payment with webhook data
+    const webhookNote = `Webhook: Response=${webhookData.vnp_ResponseCode}, Status=${webhookData.vnp_TransactionStatus}, Bank=${webhookData.vnp_BankCode || 'N/A'}, PayDate=${webhookData.vnp_PayDate}`;
+
+    await this.paymentRepository.update(payment.id, {
+      status: newStatus,
+      transactionId: transactionId,
+      paidAt: isPaid ? new Date() : undefined,
+      note: payment.note ? `${payment.note}; ${webhookNote}` : webhookNote,
+    });
+
+    // Update the order's payment status if payment successful
+    if (isPaid) {
+      this.logger.log(`Marking order ${orderId} as paid via webhook`);
+      await this.ordersService.updatePaymentStatus(
+        payment.order.id,
+        true,
+        new Date(),
+      ); // Send payment success notification
+      try {
+        await this.sendPaymentSuccessNotifications(payment.order);
+        this.logger.log(
+          `Payment webhook processed successfully for order ${orderId}`,
+        );
+      } catch (notificationError) {
+        this.logger.warn(
+          'Failed to send payment notification:',
+          notificationError,
+        );
+        // Don't fail the webhook processing for notification errors
+      }
+    } // Fetch updated payment with relations
+    const updatedPayment = await this.paymentRepository.findOne({
+      where: { id: payment.id },
+      relations: ['order', 'order.user', 'order.shipping'],
+    });
+
+    if (!updatedPayment) {
+      throw new NotFoundException('Updated payment not found');
+    }
+
+    this.logger.log(
+      `VNPay webhook processed successfully for payment ${payment.id}`,
+    );
+    return updatedPayment;
   }
 }

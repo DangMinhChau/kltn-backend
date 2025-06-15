@@ -15,8 +15,6 @@ import {
   CreateUserDto,
   UpdateUserDto,
   UserQueryDto,
-  ToggleActiveDto,
-  ChangeRoleDto,
   UserResponseDto,
 } from '../dto';
 
@@ -209,9 +207,7 @@ export class AdminUsersService {
         if (existingUserByEmail) {
           throw new ConflictException('Email đã được sử dụng');
         }
-      }
-
-      // Check phone number uniqueness if phone is being updated
+      } // Check phone number uniqueness if phone is being updated
       if (
         updateUserDto.phoneNumber &&
         updateUserDto.phoneNumber !== user.phoneNumber
@@ -223,6 +219,11 @@ export class AdminUsersService {
         if (existingUserByPhone) {
           throw new ConflictException('Số điện thoại đã được sử dụng');
         }
+      }
+
+      // Prevent deactivating admin users
+      if (updateUserDto.isActive === false && user.role === UserRole.ADMIN) {
+        throw new BadRequestException('Không thể vô hiệu hóa tài khoản admin');
       }
 
       // Update user
@@ -241,82 +242,6 @@ export class AdminUsersService {
       }
       this.logger.error('Failed to update user:', error);
       throw new InternalServerErrorException('Không thể cập nhật người dùng');
-    }
-  }
-
-  /**
-   * Kích hoạt/vô hiệu hóa người dùng
-   */
-  async toggleActive(
-    id: string,
-    toggleActiveDto: ToggleActiveDto,
-  ): Promise<UserResponseDto> {
-    try {
-      const user = await this.userRepository.findOne({ where: { id } });
-
-      if (!user) {
-        throw new NotFoundException('Người dùng không tồn tại');
-      }
-
-      // Prevent deactivating admin users
-      if (user.role === UserRole.ADMIN && !toggleActiveDto.isActive) {
-        throw new BadRequestException('Không thể vô hiệu hóa tài khoản admin');
-      }
-
-      await this.userRepository.update(id, {
-        isActive: toggleActiveDto.isActive,
-      });
-
-      const updatedUser = await this.userRepository.findOne({ where: { id } });
-
-      return plainToInstance(UserResponseDto, updatedUser, {
-        excludeExtraneousValues: true,
-      });
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      this.logger.error('Failed to toggle user active status:', error);
-      throw new InternalServerErrorException(
-        'Không thể thay đổi trạng thái người dùng',
-      );
-    }
-  }
-
-  /**
-   * Thay đổi vai trò người dùng
-   */
-  async changeRole(
-    id: string,
-    changeRoleDto: ChangeRoleDto,
-  ): Promise<UserResponseDto> {
-    try {
-      const user = await this.userRepository.findOne({ where: { id } });
-
-      if (!user) {
-        throw new NotFoundException('Người dùng không tồn tại');
-      }
-
-      await this.userRepository.update(id, {
-        role: changeRoleDto.role,
-      });
-
-      const updatedUser = await this.userRepository.findOne({ where: { id } });
-
-      return plainToInstance(UserResponseDto, updatedUser, {
-        excludeExtraneousValues: true,
-      });
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      this.logger.error('Failed to change user role:', error);
-      throw new InternalServerErrorException(
-        'Không thể thay đổi vai trò người dùng',
-      );
     }
   }
 

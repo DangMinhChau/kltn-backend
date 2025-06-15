@@ -36,11 +36,32 @@ export const envValidationSchema = Joi.object({
   GMAIL_REFRESH_TOKEN: Joi.string().required(),
   GMAIL_ACCESS_TOKEN: Joi.string().optional(), // Optional as it can be generated from refresh token
 
-  // Cloudinary Configuration  CLOUDINARY_CLOUD_NAME: Joi.string().required(),
+  // Cloudinary Configuration
+  CLOUDINARY_CLOUD_NAME: Joi.string().required(),
   CLOUDINARY_API_KEY: Joi.string().required(),
   CLOUDINARY_API_SECRET: Joi.string().required(), // Payment Configuration
   VNPAY_URL: Joi.string().uri(),
   VNPAY_TMN_CODE: Joi.string(),
   VNPAY_HASH_SECRET: Joi.string(),
   VNPAY_RETURN_URL: Joi.string().uri(),
+  VNPAY_IPN_URL: Joi.string().uri(), // Webhook URL for VNPay IPN
+
+  // Webhook Configuration
+  WEBHOOK_ALERTS_ENABLED: Joi.boolean().default(false),
+  WEBHOOK_RETENTION_DAYS: Joi.number().min(1).max(365).default(30),
+  // Email Alert Configuration
+  WEBHOOK_ALERTS_EMAIL_ENABLED: Joi.boolean().default(false),
+  WEBHOOK_ALERTS_EMAIL_RECIPIENTS: Joi.string().when(
+    'WEBHOOK_ALERTS_EMAIL_ENABLED',
+    {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    },
+  ),
+
+  // Webhook Monitoring Thresholds
+  WEBHOOK_ERROR_THRESHOLD: Joi.number().min(1).max(100).default(10),
+  WEBHOOK_SLOW_THRESHOLD_MS: Joi.number().min(100).default(5000),
+  WEBHOOK_CONSECUTIVE_FAILURES_THRESHOLD: Joi.number().min(1).default(5),
 });

@@ -33,8 +33,6 @@ import {
   CreateUserDto,
   UpdateUserDto,
   UserQueryDto,
-  ToggleActiveDto,
-  ChangeRoleDto,
   UserResponseDto,
 } from '../dto';
 
@@ -49,8 +47,6 @@ import {
   CreateUserDto,
   UpdateUserDto,
   UserQueryDto,
-  ToggleActiveDto,
-  ChangeRoleDto,
 )
 export class AdminUsersController {
   constructor(private readonly adminUsersService: AdminUsersService) {}
@@ -165,11 +161,11 @@ export class AdminUsersController {
       },
     };
   }
-
   @Patch(':id')
   @ApiOperation({
     summary: 'Cập nhật thông tin người dùng',
-    description: 'Cập nhật thông tin của một người dùng',
+    description:
+      'Cập nhật thông tin của một người dùng, bao gồm vai trò và trạng thái hoạt động',
   })
   @ApiOkResponse({
     description: 'Cập nhật người dùng thành công',
@@ -188,64 +184,6 @@ export class AdminUsersController {
 
     return {
       message: 'Cập nhật người dùng thành công',
-      data: user,
-      meta: {
-        timestamp: new Date().toISOString(),
-      },
-    };
-  }
-
-  @Patch(':id/toggle-active')
-  @ApiOperation({
-    summary: 'Kích hoạt/vô hiệu hóa người dùng',
-    description: 'Thay đổi trạng thái hoạt động của người dùng',
-  })
-  @ApiOkResponse({
-    description: 'Thay đổi trạng thái người dùng thành công',
-    type: UserResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'Người dùng không tồn tại' })
-  @ApiBadRequestResponse({
-    description: 'Không thể vô hiệu hóa tài khoản admin',
-  })
-  @ApiUnauthorizedResponse({ description: 'Chưa đăng nhập' })
-  @ApiForbiddenResponse({ description: 'Không có quyền truy cập' })
-  async toggleActive(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() toggleActiveDto: ToggleActiveDto,
-  ): Promise<BaseResponseDto<UserResponseDto>> {
-    const user = await this.adminUsersService.toggleActive(id, toggleActiveDto);
-
-    return {
-      message: 'Thay đổi trạng thái người dùng thành công',
-      data: user,
-      meta: {
-        timestamp: new Date().toISOString(),
-      },
-    };
-  }
-
-  @Patch(':id/change-role')
-  @ApiOperation({
-    summary: 'Thay đổi vai trò người dùng',
-    description: 'Thay đổi vai trò của người dùng (CUSTOMER, ADMIN)',
-  })
-  @ApiOkResponse({
-    description: 'Thay đổi vai trò người dùng thành công',
-    type: UserResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'Người dùng không tồn tại' })
-  @ApiBadRequestResponse({ description: 'Vai trò không hợp lệ' })
-  @ApiUnauthorizedResponse({ description: 'Chưa đăng nhập' })
-  @ApiForbiddenResponse({ description: 'Không có quyền truy cập' })
-  async changeRole(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() changeRoleDto: ChangeRoleDto,
-  ): Promise<BaseResponseDto<UserResponseDto>> {
-    const user = await this.adminUsersService.changeRole(id, changeRoleDto);
-
-    return {
-      message: 'Thay đổi vai trò người dùng thành công',
       data: user,
       meta: {
         timestamp: new Date().toISOString(),
