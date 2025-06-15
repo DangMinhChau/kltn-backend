@@ -192,10 +192,11 @@ export class CartsController {
     },
   })
   async update(
-    @Param('id') id: string, 
-    @Body() updateCartDto: UpdateCartDto
+    @Param('id') id: string,
+    @Body() updateCartDto: UpdateCartDto,
   ): Promise<BaseResponseDto<CartResponseDto>> {
-    const cart = await this.cartsService.update(id, updateCartDto);    return {
+    const cart = await this.cartsService.update(id, updateCartDto);
+    return {
       message: 'Cart updated successfully',
       data: this.cartsService.convertToCartResponseDto(cart),
       meta: {
@@ -222,7 +223,11 @@ export class CartsController {
     @GetUserId() userId: string,
     @Body() mergeGuestCartDto: MergeGuestCartDto,
   ): Promise<BaseResponseDto<CartResponseDto>> {
-    const cart = await this.cartsService.mergeGuestCart(userId, mergeGuestCartDto.items);    return {
+    const cart = await this.cartsService.mergeGuestCart(
+      userId,
+      mergeGuestCartDto.items,
+    );
+    return {
       message: 'Guest cart merged successfully',
       data: this.cartsService.convertToCartResponseDto(cart),
       meta: {
@@ -267,7 +272,9 @@ export class CartsController {
       ],
     },
   })
-  async clearCart(@Param('id') id: string): Promise<BaseResponseDto<CartResponseDto>> {
+  async clearCart(
+    @Param('id') id: string,
+  ): Promise<BaseResponseDto<CartResponseDto>> {
     const cart = await this.cartsService.clearCart(id);
     return {
       message: 'Cart cleared successfully',
@@ -292,7 +299,9 @@ export class CartsController {
       ],
     },
   })
-  async clearMyCart(@GetUserId() userId: string): Promise<BaseResponseDto<CartResponseDto>> {
+  async clearMyCart(
+    @GetUserId() userId: string,
+  ): Promise<BaseResponseDto<CartResponseDto>> {
     const cart = await this.cartsService.clearCartByUserId(userId);
     return {
       message: 'Your cart cleared successfully',
@@ -301,7 +310,8 @@ export class CartsController {
         timestamp: new Date().toISOString(),
       },
     };
-  }  @Delete(':id')
+  }
+  @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete cart (Admin only)' })
