@@ -9,8 +9,7 @@ import { CartItem } from './entities/cart-item.entity';
 import { Cart } from '../carts/entities/cart.entity';
 import { ProductVariant } from 'src/product/variants/entities/variant.entity';
 import { User } from 'src/user/users/entities/user.entity';
-import { CreateCartItemDto } from './dto/create-cart-item.dto';
-import { UpdateCartItemDto } from './dto/update-cart-item.dto';
+import { CreateCartItemDto, UpdateCartItemDto } from './dto/requests';
 import { ProductsService } from 'src/product/products/products.service';
 
 @Injectable()

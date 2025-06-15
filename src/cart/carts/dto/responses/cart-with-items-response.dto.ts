@@ -5,10 +5,10 @@ import { CartItemResponseDto } from '../../../cart-items/dto/responses/cart-item
 
 export class CartWithItemsResponseDto extends CartResponseDto {
   @ApiProperty({
-    description: 'Cart items with full details',
+    description: 'Cart items with full details including product information',
     type: [CartItemResponseDto],
   })
   @Expose()
   @Type(() => CartItemResponseDto)
-  items: CartItemResponseDto[];
+  declare items: CartItemResponseDto[];
 }

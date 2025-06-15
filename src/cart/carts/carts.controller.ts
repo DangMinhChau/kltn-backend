@@ -24,12 +24,14 @@ import {
   UpdateCartDto,
   MergeGuestCartDto,
   ShippingEstimateRequestDto,
+} from './dto/requests';
+import {
   CartResponseDto,
   CartSummaryResponseDto,
   CartRecommendationsResponseDto,
   ShippingEstimateResponseDto,
   CartWithItemsResponseDto,
-} from './dto';
+} from './dto/responses';
 import { BaseResponseDto } from 'src/common/dto/base-response.dto';
 import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 import { JwtAuthGuard, RolesGuard } from 'src/common/guards';

@@ -19,8 +19,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import { CartItemsService } from './cart-items.service';
-import { CreateCartItemDto } from './dto/create-cart-item.dto';
-import { UpdateCartItemDto } from './dto/update-cart-item.dto';
+import { CreateCartItemDto, UpdateCartItemDto } from './dto/requests';
 import {
   CartItemResponseDto,
   CartValidationResponseDto,
