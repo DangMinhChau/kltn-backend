@@ -257,7 +257,9 @@ export class CartItemsController {
       ],
     },
   })
-  findOne(@Param('id') id: string): Promise<CartItem> {
+  findOne(
+    @Param('id') id: string,
+  ): Promise<BaseResponseDto<CartItemResponseDto>> {
     return this.cartItemsService.findOne(id);
   }
   @Patch(':id')
@@ -280,7 +282,7 @@ export class CartItemsController {
   update(
     @Param('id') id: string,
     @Body() updateCartItemDto: UpdateCartItemDto,
-  ): Promise<CartItem> {
+  ): Promise<BaseResponseDto<CartItemResponseDto>> {
     return this.cartItemsService.update(id, updateCartItemDto);
   }
   @Patch(':id/quantity')

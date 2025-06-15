@@ -171,8 +171,33 @@ export class CartItemsService {
       },
     };
   }
+  async findOne(id: string): Promise<BaseResponseDto<CartItemResponseDto>> {
+    const cartItem = await this.cartItemRepository.findOne({
+      where: { id },
+      relations: [
+        'cart',
+        'variant',
+        'variant.product',
+        'variant.color',
+        'variant.size',
+      ],
+    });
 
-  async findOne(id: string): Promise<CartItem> {
+    if (!cartItem) {
+      throw new NotFoundException(`Cart item with ID ${id} not found`);
+    }
+
+    return {
+      message: 'Cart item retrieved successfully',
+      data: this.toCartItemResponseDto(cartItem),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
+
+  // Internal method - returns CartItem entity for service use
+  async findOneEntity(id: string): Promise<CartItem> {
     const cartItem = await this.cartItemRepository.findOne({
       where: { id },
       relations: [
@@ -239,12 +264,11 @@ export class CartItemsService {
       ],
     });
   }
-
   async update(
     id: string,
     updateCartItemDto: UpdateCartItemDto,
-  ): Promise<CartItem> {
-    const cartItem = await this.findOne(id);
+  ): Promise<BaseResponseDto<CartItemResponseDto>> {
+    const cartItem = await this.findOneEntity(id);
     const { quantity } = updateCartItemDto;
 
     if (quantity !== undefined) {
@@ -268,10 +292,18 @@ export class CartItemsService {
       cartItem.quantity = quantity;
     }
 
-    return await this.cartItemRepository.save(cartItem);
+    const updatedCartItem = await this.cartItemRepository.save(cartItem);
+
+    return {
+      message: 'Cart item updated successfully',
+      data: this.toCartItemResponseDto(updatedCartItem),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
   async updateQuantity(id: string, quantity: number): Promise<CartItem> {
-    const cartItem = await this.findOne(id);
+    const cartItem = await this.findOneEntity(id);
 
     if (quantity <= 0) {
       await this.cartItemRepository.remove(cartItem);
@@ -298,9 +330,8 @@ export class CartItemsService {
     cartItem.quantity = quantity;
     return await this.cartItemRepository.save(cartItem);
   }
-
   async remove(id: string): Promise<void> {
-    const cartItem = await this.findOne(id);
+    const cartItem = await this.findOneEntity(id);
     await this.cartItemRepository.remove(cartItem);
   }
 
