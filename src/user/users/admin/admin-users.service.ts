@@ -36,12 +36,13 @@ export class AdminUsersService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
-
   /**
    * Lấy danh sách người dùng với phân trang và lọc
    */
   async findAll(queryDto: UserQueryDto): Promise<PaginatedUsers> {
     try {
+      this.logger.log('Finding all users with query:', queryDto);
+
       const {
         page = 1,
         limit = 10,
@@ -94,13 +95,13 @@ export class AdminUsersService {
 
       // Apply pagination
       const offset = (page - 1) * limit;
-      queryBuilder.skip(offset).take(limit);
-
+      queryBuilder.skip(offset).take(limit);      this.logger.log('Executing database query...');
       const [users, total] = await queryBuilder.getManyAndCount();
+      this.logger.log(`Found ${users.length} users out of ${total} total`);
 
       const totalPages = Math.ceil(total / limit);
 
-      return {
+      const result = {
         data: plainToInstance(UserResponseDto, users, {
           excludeExtraneousValues: true,
         }),
@@ -111,6 +112,9 @@ export class AdminUsersService {
           totalPages,
         },
       };
+
+      this.logger.log('Successfully returning users list');
+      return result;
     } catch (error) {
       this.logger.error('Error fetching users list:', error);
       throw new InternalServerErrorException(
