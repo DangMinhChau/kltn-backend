@@ -19,7 +19,11 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import { CartItemsService } from './cart-items.service';
-import { CreateCartItemDto, UpdateCartItemDto } from './dto/requests';
+import {
+  CreateCartItemDto,
+  UpdateCartItemDto,
+  AddToCartDto,
+} from './dto/requests';
 import {
   CartItemResponseDto,
   CartValidationResponseDto,
@@ -61,7 +65,9 @@ export class CartItemsController {
       ],
     },
   })
-  create(@Body() createCartItemDto: CreateCartItemDto): Promise<CartItem> {
+  create(
+    @Body() createCartItemDto: CreateCartItemDto,
+  ): Promise<BaseResponseDto<CartItemResponseDto>> {
     return this.cartItemsService.create(createCartItemDto);
   }
   @Post('add-to-cart')
@@ -84,12 +90,12 @@ export class CartItemsController {
   })
   addToCart(
     @GetUserId() userId: string,
-    @Body() body: { variantId: string; quantity: number },
-  ): Promise<CartItem> {
+    @Body() addToCartDto: AddToCartDto,
+  ): Promise<BaseResponseDto<CartItemResponseDto>> {
     return this.cartItemsService.addToCart(
       userId,
-      body.variantId,
-      body.quantity,
+      addToCartDto.variantId,
+      addToCartDto.quantity,
     );
   }
   @Post('bulk-add-to-cart')

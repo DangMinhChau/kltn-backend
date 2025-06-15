@@ -5,11 +5,18 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { plainToInstance } from 'class-transformer';
 import { CartItem } from './entities/cart-item.entity';
 import { Cart } from '../carts/entities/cart.entity';
 import { ProductVariant } from 'src/product/variants/entities/variant.entity';
 import { User } from 'src/user/users/entities/user.entity';
-import { CreateCartItemDto, UpdateCartItemDto } from './dto/requests';
+import {
+  CreateCartItemDto,
+  UpdateCartItemDto,
+  AddToCartDto,
+} from './dto/requests';
+import { CartItemResponseDto } from './dto/responses';
+import { BaseResponseDto } from 'src/common/dto/base-response.dto';
 import { ProductsService } from 'src/product/products/products.service';
 
 @Injectable()
@@ -23,7 +30,23 @@ export class CartItemsService {
     private readonly variantRepository: Repository<ProductVariant>,
     private readonly productsService: ProductsService,
   ) {}
-  async create(createCartItemDto: CreateCartItemDto): Promise<CartItem> {
+  async create(
+    createCartItemDto: CreateCartItemDto,
+  ): Promise<BaseResponseDto<CartItemResponseDto>> {
+    const cartItem = await this.createCartItemEntity(createCartItemDto);
+    return {
+      message: 'Cart item created successfully',
+      data: this.toCartItemResponseDto(cartItem),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
+
+  // Internal method for creating cart item entity
+  async createCartItemEntity(
+    createCartItemDto: CreateCartItemDto,
+  ): Promise<CartItem> {
     const { cartId, variantId, quantity } = createCartItemDto;
 
     // Validate cart exists
@@ -87,8 +110,23 @@ export class CartItemsService {
 
     return await this.cartItemRepository.save(cartItem);
   }
-
   async addToCart(
+    userId: string,
+    variantId: string,
+    quantity: number,
+  ): Promise<BaseResponseDto<CartItemResponseDto>> {
+    const cartItem = await this.addToCartEntity(userId, variantId, quantity);
+    return {
+      message: 'Item added to cart successfully',
+      data: this.toCartItemResponseDto(cartItem),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
+
+  // Internal method for adding to cart
+  async addToCartEntity(
     userId: string,
     variantId: string,
     quantity: number,
@@ -105,8 +143,7 @@ export class CartItemsService {
         }),
       );
     }
-
-    return this.create({
+    return this.createCartItemEntity({
       cartId: cart.id,
       variantId,
       quantity,
@@ -264,10 +301,9 @@ export class CartItemsService {
     items: { variantId: string; quantity: number }[],
   ): Promise<CartItem[]> {
     const results: CartItem[] = [];
-
     for (const item of items) {
       try {
-        const cartItem = await this.addToCart(
+        const cartItem = await this.addToCartEntity(
           userId,
           item.variantId,
           item.quantity,
@@ -492,5 +528,11 @@ export class CartItemsService {
       uniqueProducts: cart.items.length,
       itemsByCategory,
     };
+  }
+
+  private toCartItemResponseDto(cartItem: CartItem): CartItemResponseDto {
+    return plainToInstance(CartItemResponseDto, cartItem, {
+      excludeExtraneousValues: true,
+    });
   }
 }
