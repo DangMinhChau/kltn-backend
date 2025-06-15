@@ -78,13 +78,12 @@ export class VariantsService {
     if (isActive !== undefined) {
       queryBuilder.andWhere('variant.isActive = :isActive', { isActive });
     }
-
     if (minPrice !== undefined) {
-      queryBuilder.andWhere('variant.price >= :minPrice', { minPrice });
+      queryBuilder.andWhere('product.basePrice >= :minPrice', { minPrice });
     }
 
     if (maxPrice !== undefined) {
-      queryBuilder.andWhere('variant.price <= :maxPrice', { maxPrice });
+      queryBuilder.andWhere('product.basePrice <= :maxPrice', { maxPrice });
     }
 
     if (minStock !== undefined) {

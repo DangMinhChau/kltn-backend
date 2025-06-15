@@ -32,25 +32,24 @@ export class VariantResponseDto {
   })
   @Expose()
   isActive: boolean;
-
   @ApiProperty({
     description: 'Product information',
     example: {
       id: '550e8400-e29b-41d4-a716-446655440001',
       name: 'Basic T-Shirt',
-      baseSku: 'SHIRT',
+      basePrice: 100000,
     },
   })
   @Expose()
   @Transform(({ obj }) => ({
     id: obj.product?.id,
     name: obj.product?.name,
-    baseSku: obj.product?.baseSku,
+    basePrice: obj.product?.basePrice,
   }))
   product: {
     id: string;
     name: string;
-    baseSku: string;
+    basePrice?: number;
   };
 
   @ApiProperty({

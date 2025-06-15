@@ -8,7 +8,7 @@ import {
   IsBoolean,
   IsUUID,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ProductQueryDto {
@@ -18,19 +18,20 @@ export class ProductQueryDto {
     required: false,
   })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
-
   @ApiProperty({
     description: 'Number of items per page',
     example: 10,
     required: false,
   })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(1000)
   limit?: number = 10;
 
   @ApiProperty({
@@ -60,10 +61,20 @@ export class ProductQueryDto {
     return value as boolean;
   })
   isActive?: boolean;
+
   @ApiProperty({
     description: 'Filter by featured status',
     required: false,
   })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value as boolean;
+  })
+  isFeatured?: boolean;
+
   @ApiProperty({
     description: 'Sort field',
     enum: ['name', 'price', 'createdAt', 'updatedAt'],
@@ -134,13 +145,13 @@ export class ProductQueryDto {
   @IsOptional()
   @IsString()
   tagIds?: string;
-
   @ApiProperty({
     description: 'Filter by minimum price',
     required: false,
     example: 100000,
   })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   minPrice?: number;
@@ -151,6 +162,7 @@ export class ProductQueryDto {
     example: 1000000,
   })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   maxPrice?: number;
@@ -161,6 +173,7 @@ export class ProductQueryDto {
     example: 10,
   })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   minStock?: number;
