@@ -302,12 +302,21 @@ export class CartItemsService {
       },
     };
   }
-  async updateQuantity(id: string, quantity: number): Promise<CartItem> {
+  async updateQuantity(
+    id: string,
+    quantity: number,
+  ): Promise<BaseResponseDto<CartItemResponseDto>> {
     const cartItem = await this.findOneEntity(id);
 
     if (quantity <= 0) {
       await this.cartItemRepository.remove(cartItem);
-      return cartItem;
+      return {
+        message: 'Cart item removed successfully',
+        data: this.toCartItemResponseDto(cartItem),
+        meta: {
+          timestamp: new Date().toISOString(),
+        },
+      };
     }
 
     // Use productsService to check stock availability
@@ -328,7 +337,15 @@ export class CartItemsService {
     }
 
     cartItem.quantity = quantity;
-    return await this.cartItemRepository.save(cartItem);
+    const updatedCartItem = await this.cartItemRepository.save(cartItem);
+
+    return {
+      message: 'Cart item quantity updated successfully',
+      data: this.toCartItemResponseDto(updatedCartItem),
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
   async remove(id: string): Promise<void> {
     const cartItem = await this.findOneEntity(id);

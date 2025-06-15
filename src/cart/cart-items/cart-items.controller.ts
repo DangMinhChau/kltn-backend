@@ -305,7 +305,7 @@ export class CartItemsController {
   updateQuantity(
     @Param('id') id: string,
     @Body() body: { quantity: number },
-  ): Promise<CartItem> {
+  ): Promise<BaseResponseDto<CartItemResponseDto>> {
     return this.cartItemsService.updateQuantity(id, body.quantity);
   }
   @Delete(':id')
