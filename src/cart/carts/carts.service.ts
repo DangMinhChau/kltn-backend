@@ -113,18 +113,17 @@ export class CartsService {
 
     return cart;
   }  async findByUserId(userId: string): Promise<Cart> {
-    let cart = await this.cartRepository.findOne({
-      where: { user: { id: userId } },
-      relations: [
-        'user',
-        'items',
-        'items.variant',
-        'items.variant.product',
-        'items.variant.color',
-        'items.variant.size',
-        'items.variant.images',
-      ],
-    });
+    let cart = await this.cartRepository
+      .createQueryBuilder('cart')
+      .leftJoinAndSelect('cart.user', 'user')
+      .leftJoinAndSelect('cart.items', 'items')
+      .leftJoinAndSelect('items.variant', 'variant')
+      .leftJoinAndSelect('variant.product', 'product')
+      .leftJoinAndSelect('variant.color', 'color')
+      .leftJoinAndSelect('variant.size', 'size')
+      .leftJoinAndSelect('variant.images', 'variantImages')
+      .where('cart.user.id = :userId', { userId })
+      .getOne();
 
     if (!cart) {
       // Auto create cart if not exists
@@ -274,8 +273,11 @@ export class CartsService {
         { name: 'Overnight', cost: baseCost * 3, days: 1 },
       ],
     };
-  }
-  private toCartResponseDto(cart: Cart): CartResponseDto {
+  }  private toCartResponseDto(cart: Cart): CartResponseDto {
+    console.log('toCartResponseDto - Cart data:', JSON.stringify(cart, null, 2));
+    console.log('toCartResponseDto - Cart items:', cart.items);
+    console.log('toCartResponseDto - First item variant:', cart.items?.[0]?.variant);
+    
     const cartData = {
       ...cart,
       itemCount: cart.items?.length || 0,
@@ -289,9 +291,12 @@ export class CartsService {
         }, 0) || 0,
     };
 
-    return plainToInstance(CartResponseDto, cartData, {
+    const result = plainToInstance(CartResponseDto, cartData, {
       excludeExtraneousValues: true,
     });
+    
+    console.log('toCartResponseDto - Result:', JSON.stringify(result, null, 2));
+    return result;
   }
   private toCartSummaryResponseDto(cart: Cart): CartSummaryResponseDto {
     const totalItems = cart.items?.length || 0;
