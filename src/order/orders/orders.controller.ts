@@ -9,7 +9,6 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard, RolesGuard } from 'src/common/guards';
-import { UserRole } from 'src/common/constants/user-role.enum';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -20,7 +19,6 @@ export class OrdersController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
   async remove(@Param('id') id: string) {
     await this.ordersService.remove(id);
   }
