@@ -30,4 +30,8 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   cancelUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  clientIp?: string;
 }

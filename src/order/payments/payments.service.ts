@@ -21,23 +21,7 @@ import {
   VNPayCallbackDto,
 } from './dto/payment-gateway.dto';
 import { Order } from '../orders/entities/order.entity';
-import * as crypto from 'crypto';
-
-// Define querystring replacement with properly typed functions
-const qs = {
-  stringify: (
-    obj: Record<string, string | number>,
-    options?: { encode: boolean },
-  ): string => {
-    const encode = options?.encode !== false;
-    return Object.keys(obj)
-      .map((key) => {
-        const value = obj[key];
-        return `${key}=${encode ? encodeURIComponent(String(value)) : String(value)}`;
-      })
-      .join('&');
-  },
-};
+import { VNPayService } from './services/vnpay.service';
 
 @Injectable()
 export class PaymentsService {
@@ -49,6 +33,7 @@ export class PaymentsService {
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
     private readonly mailService: MailService,
+    private readonly vnpayService: VNPayService,
   ) {}
   async create(
     createPaymentDto: CreatePaymentDto,
@@ -108,107 +93,55 @@ export class PaymentsService {
     payment: Payment,
     createPaymentDto: CreatePaymentDto,
   ): Promise<VNPayCreatePaymentResponse> {
-    const vnpUrl = this.configService.get<string>('VNPAY_URL');
-    const vnpTmnCode = this.configService.get<string>('VNPAY_TMN_CODE');
-    const vnpHashSecret = this.configService.get<string>('VNPAY_HASH_SECRET');
-    const vnpReturnUrl =
-      createPaymentDto.returnUrl ||
-      this.configService.get<string>('VNPAY_RETURN_URL');
+    try {
+      const orderId = payment.order.id;
+      const amount = payment.amount;
+      const orderInfo = `Thanh toan don hang ${orderId}`;
+      const clientIp = createPaymentDto.clientIp || '127.0.0.1';
 
-    if (!vnpUrl || !vnpTmnCode || !vnpHashSecret || !vnpReturnUrl) {
-      throw new BadRequestException('VNPAY configuration is incomplete');
-    }
-
-    const createDate = new Date()
-      .toISOString()
-      .replace(/[-:]/g, '')
-      .replace(/\.\d{3}Z/, '');
-    const orderId = payment.order.id;
-    const amount = Math.round(payment.amount * 100); // VNPay requires amount in cents
-
-    const vnpParams: Record<string, string | number> = {
-      vnp_Version: '2.1.0',
-      vnp_Command: 'pay',
-      vnp_TmnCode: vnpTmnCode,
-      vnp_Amount: amount,
-      vnp_CreateDate: createDate,
-      vnp_CurrCode: 'VND',
-      vnp_IpAddr: '127.0.0.1',
-      vnp_Locale: 'vn',
-      vnp_OrderInfo: `Payment for order ${orderId}`,
-      vnp_OrderType: 'other',
-      vnp_ReturnUrl: vnpReturnUrl,
-      vnp_TxnRef: orderId,
-    };
-
-    // Sort params and create query string
-    const sortedParams: Record<string, string | number> = {};
-    Object.keys(vnpParams)
-      .sort()
-      .forEach((key) => {
-        sortedParams[key] = vnpParams[key];
+      const paymentUrl = this.vnpayService.createPaymentUrl({
+        orderId,
+        amount,
+        orderInfo,
+        clientIp,
+        locale: 'vn',
       });
 
-    const signData = qs.stringify(sortedParams, { encode: false });
-    const hmac = crypto.createHmac('sha512', vnpHashSecret);
-    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+      // Update payment with transaction reference
+      await this.paymentRepository.update(payment.id, {
+        transactionId: orderId,
+      });
 
-    vnpParams.vnp_SecureHash = signed;
-    const paymentUrl =
-      vnpUrl + '?' + qs.stringify(vnpParams, { encode: false });
+      this.logger.log(`Created VNPay payment URL for order ${orderId}`);
 
-    // Update payment with transaction reference
-    await this.paymentRepository.update(payment.id, {
-      transactionId: orderId,
-    });
-
-    return {
-      paymentUrl,
-      orderId,
-      transactionId: orderId,
-    };
+      return {
+        paymentUrl,
+        orderId,
+        transactionId: orderId,
+      };
+    } catch (error) {
+      this.logger.error('Error creating VNPay payment:', error);
+      throw new BadRequestException('Failed to create VNPay payment');
+    }
   }
   async handleVNPayCallback(callbackData: VNPayCallbackDto): Promise<Payment> {
     this.logger.log('Processing VNPay callback');
-    this.logger.debug(JSON.stringify(callbackData));
-
-    const vnpHashSecret = this.configService.get<string>('VNPAY_HASH_SECRET');
-
-    if (!vnpHashSecret) {
-      this.logger.error('VNPAY_HASH_SECRET is not configured');
-      throw new BadRequestException('Payment configuration error');
-    }
-
-    const secureHash = callbackData.vnp_SecureHash;
-
-    // Remove hash from params for verification
-    const paramsWithoutHash: Record<string, string> = {};
-    Object.keys(callbackData).forEach((key) => {
-      if (key !== 'vnp_SecureHash') {
-        paramsWithoutHash[key] = callbackData[
-          key as keyof VNPayCallbackDto
-        ] as string;
-      }
-    });
-
-    // Sort params and create signature
-    const sortedParams: Record<string, string> = {};
-    Object.keys(paramsWithoutHash)
-      .sort()
-      .forEach((key) => {
-        sortedParams[key] = paramsWithoutHash[key];
-      });
-
-    const signData = qs.stringify(sortedParams, { encode: false });
-    const hmac = crypto.createHmac('sha512', vnpHashSecret);
-    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-
-    if (signed !== secureHash) {
+    this.logger.debug(JSON.stringify(callbackData)); // Verify the callback signature
+    const isValid = this.vnpayService.verifyReturn(
+      callbackData as unknown as import('./services/vnpay.service').VNPayReturnQuery,
+    );
+    if (!isValid) {
       this.logger.error('Invalid VNPay signature');
       throw new BadRequestException('Invalid signature');
     }
 
-    const orderId = callbackData.vnp_TxnRef;
+    // Parse payment result
+    const paymentResult = this.vnpayService.parsePaymentResult(
+      callbackData as unknown as import('./services/vnpay.service').VNPayReturnQuery,
+    );
+    const orderId = paymentResult.orderId;
+
+    // Find the payment
     const payment = await this.paymentRepository.findOne({
       where: { order: { id: orderId } },
       relations: ['order'],
@@ -219,24 +152,27 @@ export class PaymentsService {
       throw new NotFoundException('Payment not found');
     }
 
-    const isPaid = callbackData.vnp_ResponseCode === '00';
-    const status = isPaid ? PaymentStatus.PAID : PaymentStatus.FAILED;
+    // Determine payment status
+    const status = paymentResult.isSuccess
+      ? PaymentStatus.PAID
+      : PaymentStatus.FAILED;
 
     this.logger.log(
       `Updating payment ${payment.id} for order ${orderId} to status: ${status}`,
-    );
-
+    ); // Update payment
     await this.paymentRepository.update(payment.id, {
       status,
-      transactionId: callbackData.vnp_TransactionNo,
-      paidAt: isPaid ? new Date() : undefined,
-    }); // Update the order's payment status
-    if (isPaid) {
+      transactionId: paymentResult.transactionId,
+      paidAt: paymentResult.isSuccess ? paymentResult.payDate : undefined,
+    });
+
+    // Update the order's payment status
+    if (paymentResult.isSuccess) {
       this.logger.log(`Marking order ${orderId} as paid`);
       await this.ordersService.updatePaymentStatus(
         payment.order.id,
         true,
-        new Date(),
+        paymentResult.payDate,
       );
     }
 
@@ -248,6 +184,7 @@ export class PaymentsService {
     if (!updatedPayment) {
       throw new NotFoundException('Updated payment not found');
     }
+
     return updatedPayment;
   }
   async findAll(
