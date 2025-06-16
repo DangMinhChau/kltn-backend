@@ -25,13 +25,12 @@ import {
 export class Order extends BaseEntity {
   @Column({ length: 50, unique: true })
   orderNumber: string;
-
   @ManyToOne(() => User, (user) => user.orders, {
-    nullable: false,
-    onDelete: 'RESTRICT',
+    nullable: true, // Allow guest orders
+    onDelete: 'SET NULL',
   })
   @Index()
-  user: User;
+  user: User | null;
 
   @Column()
   customerName: string;

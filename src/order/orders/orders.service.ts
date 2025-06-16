@@ -26,18 +26,31 @@ export class OrdersService {
       await this.validateOrderItems(createOrderDto.items);
 
       // Generate unique order number
-      const orderNumber = this.generateOrderNumber(); // Create order with user relation
-      const order = this.orderRepository.create({
-        ...createOrderDto,
+      const orderNumber = this.generateOrderNumber();
+
+      // Destructure to separate items from order data
+      const { items, userId, ...orderFields } = createOrderDto;
+
+      // Create order with optional user relation (for guest orders)
+      const orderData: Partial<Order> = {
+        ...orderFields,
         orderNumber,
         status: OrderStatus.PENDING,
-        user: { id: createOrderDto.userId } as User, // TypeORM will handle the relation
-      });
+      };
+
+      // Only set user relation if userId is provided (authenticated user)
+      if (userId) {
+        orderData.user = { id: userId } as User;
+      }
+
+      const order = this.orderRepository.create(orderData);
 
       const savedOrder = await this.orderRepository.save(order);
 
       // Update stock quantities after successful order creation
-      await this.updateStockForOrderItems(createOrderDto.items); // Simply return the order - payment handling should be done separately via PaymentsController
+      await this.updateStockForOrderItems(items);
+
+      // Simply return the order - payment handling should be done separately via PaymentsController
       return savedOrder;
     } catch (error) {
       throw new BadRequestException(

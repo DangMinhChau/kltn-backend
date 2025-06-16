@@ -28,7 +28,7 @@ import { BaseResponseDto } from 'src/common/dto/base-response.dto';
 import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 
 interface AuthenticatedRequest extends Request {
-  user: {
+  user?: {
     id: string;
     email: string;
     role: UserRole;
@@ -37,21 +37,23 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('Orders')
 @Controller('orders')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
+
   @Post()
-  @ApiOperation({ summary: 'Create a new order' })
+  @ApiOperation({
+    summary: 'Create a new order (supports both guest and authenticated users)',
+  })
   @ApiResponse({ status: 201, description: 'Order created successfully' })
   async create(
     @Body() createOrderDto: CreateOrderDto,
     @Request() req: AuthenticatedRequest,
   ): Promise<BaseResponseDto> {
-    // Ensure userId is set from authenticated user if not provided
-    if (!createOrderDto.userId && req.user) {
+    // If user is authenticated and userId is not provided, set it from token
+    if (req.user && !createOrderDto.userId) {
       createOrderDto.userId = req.user.id;
     }
+
     const order = await this.ordersService.create(createOrderDto);
     return {
       message: 'Order created successfully',
@@ -62,6 +64,8 @@ export class OrdersController {
     };
   }
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all orders' })
   @ApiResponse({ status: 200, description: 'Orders retrieved successfully' })
   async findAll(
@@ -70,6 +74,9 @@ export class OrdersController {
     @Query('limit') limit: string = '10',
     @Query('status') status?: string,
   ): Promise<PaginatedResponseDto> {
+    if (!req.user) {
+      throw new Error('Authentication required');
+    }
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const result = await this.ordersService.findAll(
@@ -89,12 +96,17 @@ export class OrdersController {
     };
   }
   @Get('my-orders')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user orders' })
   async getMyOrders(
     @Request() req: AuthenticatedRequest,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
   ): Promise<PaginatedResponseDto> {
+    if (!req.user) {
+      throw new Error('Authentication required');
+    }
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const result = await this.ordersService.findUserOrders(
@@ -113,6 +125,8 @@ export class OrdersController {
     };
   }
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get order by ID' })
   @ApiResponse({ status: 200, description: 'Order found successfully' })
   @ApiResponse({ status: 404, description: 'Order not found' })
@@ -120,6 +134,9 @@ export class OrdersController {
     @Param('id') id: string,
     @Request() req: AuthenticatedRequest,
   ): Promise<BaseResponseDto> {
+    if (!req.user) {
+      throw new Error('Authentication required');
+    }
     const order = await this.ordersService.findOneForUser(id, req.user.id);
     return {
       message: 'Order found successfully',
@@ -156,11 +173,16 @@ export class OrdersController {
     await this.ordersService.remove(id);
   }
   @Patch(':id/cancel')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel order' })
   async cancelOrder(
     @Param('id') id: string,
     @Request() req: AuthenticatedRequest,
   ): Promise<BaseResponseDto> {
+    if (!req.user) {
+      throw new Error('Authentication required');
+    }
     const order = await this.ordersService.cancelOrderForUser(id, req.user.id);
     return {
       message: 'Order cancelled successfully',

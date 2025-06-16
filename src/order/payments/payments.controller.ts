@@ -28,9 +28,10 @@ export class PaymentsController {
 
   constructor(private readonly paymentsService: PaymentsService) {}
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new payment' })
+  @ApiOperation({
+    summary:
+      'Create a new payment (supports both guest and authenticated users)',
+  })
   @ApiResponse({ status: 201, description: 'Payment created successfully' })
   async create(
     @Body() createPaymentDto: CreatePaymentDto,
