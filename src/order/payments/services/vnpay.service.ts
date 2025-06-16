@@ -1,8 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-import * as querystring from 'querystring';
-import { format } from 'date-fns';
 
 export interface VNPayConfig {
   tmnCode: string;
@@ -41,13 +39,14 @@ export interface VNPayReturnQuery {
 export class VNPayService {
   private readonly logger = new Logger(VNPayService.name);
   private readonly config: VNPayConfig;
-
   constructor(private configService: ConfigService) {
     this.config = {
-      tmnCode: this.configService.get<string>('VNPAY_TMN_CODE'),
-      secretKey: this.configService.get<string>('VNPAY_SECRET_KEY'),
-      url: this.configService.get<string>('VNPAY_URL'),
-      returnUrl: this.configService.get<string>('VNPAY_RETURN_URL'),
+      tmnCode: this.configService.get<string>('VNPAY_TMN_CODE') || '',
+      secretKey: this.configService.get<string>('VNPAY_SECRET_KEY') || '',
+      url:
+        this.configService.get<string>('VNPAY_URL') ||
+        'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+      returnUrl: this.configService.get<string>('VNPAY_RETURN_URL') || '',
       version: '2.1.0',
       command: 'pay',
       currCode: 'VND',
@@ -200,9 +199,15 @@ export class VNPayService {
 
   /**
    * Format date cho VNPay (yyyyMMddHHmmss)
-   */
-  private formatDate(date: Date): string {
-    return format(date, 'yyyyMMddHHmmss');
+   */ private formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}${month}${day}${hours}${minutes}${seconds}`;
   }
 
   /**
