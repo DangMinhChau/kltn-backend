@@ -368,15 +368,17 @@ export class VouchersService {
 
   // DTO transformation methods
   toVoucherResponseDto(voucher: Voucher): VoucherResponseDto {
+    const discountValue =
+      voucher.discountType === DiscountType.AMOUNT
+        ? voucher.discountAmount || 0
+        : voucher.discountPercent || 0;
+
     return plainToInstance(
       VoucherResponseDto,
       {
         ...voucher,
-        discountType: voucher.discountType,
-        discountValue:
-          voucher.discountType === DiscountType.AMOUNT
-            ? voucher.discountAmount
-            : voucher.discountPercent,
+        discountType: voucher.discountType.toLowerCase(), // Ensure lowercase
+        discountValue: discountValue,
         minOrderValue: voucher.minOrderAmount,
         usedCount: voucher.usageCount,
         startDate: voucher.startAt,

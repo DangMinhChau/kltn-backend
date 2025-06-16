@@ -113,7 +113,6 @@ export class VouchersController {
   async getStatistics() {
     return this.vouchersService.getVoucherStatistics();
   }
-
   @Get('validate/:code')
   async validateVoucher(
     @Param('code') code: string,
