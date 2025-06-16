@@ -12,6 +12,8 @@ import { OrderStatus } from 'src/common/constants/order-status.enum';
 import { PaymentStatus } from 'src/common/constants/payment-status.enum';
 import { ProductsService } from 'src/product/products/products.service';
 import { User } from 'src/user/users/entities/user.entity';
+import { VouchersService } from 'src/promotion/vouchers/vouchers.service';
+import { Voucher } from 'src/promotion/vouchers/entities/voucher.entity';
 
 @Injectable()
 export class OrdersService {
@@ -19,19 +21,50 @@ export class OrdersService {
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
     private readonly productsService: ProductsService,
+    private readonly vouchersService: VouchersService,
   ) {}
   async create(createOrderDto: CreateOrderDto) {
     try {
       // Validate all order items and check availability
-      await this.validateOrderItems(createOrderDto.items);
+      await this.validateOrderItems(createOrderDto.items); // Validate and apply voucher if provided
+      let appliedVoucher: Voucher | null = null;
+      if (createOrderDto.voucherId) {
+        const voucherValidation = await this.vouchersService.validateVoucher(
+          createOrderDto.voucherId,
+          createOrderDto.subTotal,
+        );
+
+        if (!voucherValidation.isValid) {
+          throw new BadRequestException(
+            `Voucher validation failed: ${voucherValidation.error}`,
+          );
+        }
+
+        if (!voucherValidation.voucher) {
+          throw new BadRequestException('Voucher not found after validation');
+        }
+
+        appliedVoucher = voucherValidation.voucher;
+
+        // Verify discount amount matches
+        const expectedDiscount = appliedVoucher.calculateDiscount(
+          createOrderDto.subTotal,
+        );
+        const actualDiscount = createOrderDto.discount || 0;
+        if (Math.abs(actualDiscount - expectedDiscount) > 0.01) {
+          throw new BadRequestException(
+            `Discount amount mismatch. Expected: ${expectedDiscount}, Received: ${actualDiscount}`,
+          );
+        }
+      }
 
       // Generate unique order number
       const orderNumber = this.generateOrderNumber();
 
       // Destructure to separate items from order data
-      const { items, userId, ...orderFields } = createOrderDto;
+      const { items, userId, voucherId, ...orderFields } = createOrderDto;
 
-      // Create order with optional user relation (for guest orders)
+      // Create order with optional user and voucher relations
       const orderData: Partial<Order> = {
         ...orderFields,
         orderNumber,
@@ -41,6 +74,9 @@ export class OrdersService {
       // Only set user relation if userId is provided (authenticated user)
       if (userId) {
         orderData.user = { id: userId } as User;
+      } // Set voucher relation if voucher is applied
+      if (appliedVoucher) {
+        orderData.voucher = appliedVoucher;
       }
 
       const order = this.orderRepository.create(orderData);
@@ -48,7 +84,10 @@ export class OrdersService {
       const savedOrder = await this.orderRepository.save(order);
 
       // Update stock quantities after successful order creation
-      await this.updateStockForOrderItems(items);
+      await this.updateStockForOrderItems(items); // If voucher was used, increment its usage count
+      if (appliedVoucher && createOrderDto.voucherId) {
+        await this.vouchersService.incrementUsage(createOrderDto.voucherId);
+      }
 
       // Simply return the order - payment handling should be done separately via PaymentsController
       return savedOrder;
@@ -147,11 +186,10 @@ export class OrdersService {
       },
     };
   }
-
   async findOne(id: string) {
     const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['items', 'items.product', 'payment'],
+      relations: ['items', 'items.product', 'payment', 'voucher'],
     });
 
     if (!order) {
@@ -160,11 +198,10 @@ export class OrdersService {
 
     return order;
   }
-
   async findByOrderNumber(orderNumber: string) {
     const order = await this.orderRepository.findOne({
       where: { orderNumber },
-      relations: ['items', 'items.product', 'payment'],
+      relations: ['items', 'items.product', 'payment', 'voucher'],
     });
 
     if (!order) {
@@ -320,11 +357,10 @@ export class OrdersService {
 
   /**
    * Find a single order and verify user ownership
-   */
-  async findOneForUser(id: string, userId: string): Promise<Order> {
+   */ async findOneForUser(id: string, userId: string): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id, user: { id: userId } },
-      relations: ['items', 'items.product', 'payment', 'user'],
+      relations: ['items', 'items.product', 'payment', 'user', 'voucher'],
     });
 
     if (!order) {

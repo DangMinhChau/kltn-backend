@@ -264,10 +264,9 @@ export class ProductsService {
       throw new NotFoundException(
         `Product for variant ${variantId} is inactive`,
       );
-    }
-
-    // Use base price from product since variant doesn't have separate pricing
-    const finalPrice = variant.product.basePrice;
+    } // Calculate final price including discount
+    const discountPercent = variant.product.discountPercent || 0;
+    const finalPrice = variant.product.basePrice * (1 - discountPercent / 100);
 
     return {
       product: variant.product,

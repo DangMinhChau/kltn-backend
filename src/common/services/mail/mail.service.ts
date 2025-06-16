@@ -165,14 +165,13 @@ export class MailService {
       html,
     });
   }
-
   async sendPasswordResetEmail(
     to: string,
     userName: string,
     resetToken: string,
   ): Promise<void> {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+    const resetUrl = `${frontendUrl}/auth/reset-password?token=${resetToken}`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
