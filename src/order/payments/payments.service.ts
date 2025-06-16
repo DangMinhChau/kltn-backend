@@ -483,31 +483,41 @@ export class PaymentsService {
         message: errorMessage,
       };
     }
-  } /**
+  }
+  /**
    * Send payment success notifications (both email and in-app)
    * @param order Order that was paid
-   */
-  private async sendPaymentSuccessNotifications(order: Order): Promise<void> {
+   */ private async sendPaymentSuccessNotifications(
+    order: Order,
+  ): Promise<void> {
     try {
-      // Send in-app notification
-      await this.notificationsService.notifyPaymentStatusChange(
-        order.user.id,
-        order.id,
-        order.orderNumber,
-        PaymentStatus.PAID,
-      );
+      // Only send notifications if user exists (not a guest order)
+      if (order.user) {
+        // Send in-app notification
+        await this.notificationsService.notifyPaymentStatusChange(
+          order.user.id,
+          order.id,
+          order.orderNumber,
+          PaymentStatus.PAID,
+        );
 
-      // Send email notification
-      await this.mailService.sendOrderStatusUpdateEmail(order.user.email, {
-        orderNumber: order.orderNumber,
-        customerName: order.user.fullName,
-        status: 'paid',
-        trackingNumber: order.shipping?.trackingNumber,
-      });
+        // Send email notification
+        await this.mailService.sendOrderStatusUpdateEmail(order.user.email, {
+          orderNumber: order.orderNumber,
+          customerName: order.user.fullName,
+          status: 'paid',
+          trackingNumber: order.shipping?.trackingNumber,
+        });
 
-      this.logger.log(
-        `Payment success notifications sent for order ${order.id}`,
-      );
+        this.logger.log(
+          `Payment success notifications sent for order ${order.id}`,
+        );
+      } else {
+        // For guest orders, we could optionally send email to customerEmail
+        this.logger.log(
+          `Skipping user notifications for guest order ${order.id}`,
+        );
+      }
     } catch (error) {
       this.logger.error('Failed to send payment notifications:', error);
       // Don't throw error to prevent notification failure from affecting payment flow

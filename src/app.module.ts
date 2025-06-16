@@ -52,6 +52,7 @@ import { AddressesModule } from 'src/user/addresses/addresses.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
+      synchronize: process.env.NODE_ENV === 'development',
     }), // Organized modules following NestJS best practices    // Product-related modules
     ProductsModule,
     SizesModule,
