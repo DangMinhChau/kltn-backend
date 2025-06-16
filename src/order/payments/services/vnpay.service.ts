@@ -40,13 +40,23 @@ export class VNPayService {
   private readonly logger = new Logger(VNPayService.name);
   private readonly config: VNPayConfig;
   constructor(private configService: ConfigService) {
+    const tmnCode = this.configService.get<string>('VNPAY_TMN_CODE');
+    const secretKey = this.configService.get<string>('VNPAY_SECRET_KEY');
+    const returnUrl = this.configService.get<string>('VNPAY_RETURN_URL');
+
+    if (!tmnCode || !secretKey || !returnUrl) {
+      throw new Error(
+        'Missing required VNPay configuration. Please check VNPAY_TMN_CODE, VNPAY_SECRET_KEY, and VNPAY_RETURN_URL environment variables.',
+      );
+    }
+
     this.config = {
-      tmnCode: this.configService.get<string>('VNPAY_TMN_CODE') || '',
-      secretKey: this.configService.get<string>('VNPAY_SECRET_KEY') || '',
+      tmnCode,
+      secretKey,
       url:
         this.configService.get<string>('VNPAY_URL') ||
         'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
-      returnUrl: this.configService.get<string>('VNPAY_RETURN_URL') || '',
+      returnUrl,
       version: '2.1.0',
       command: 'pay',
       currCode: 'VND',
